@@ -17,7 +17,7 @@ const FloatingActions = () => {
   };
 
   return (
-    <div className="fixed top-24 left-6 z-[60] flex flex-col gap-4">
+    <div className="fixed bottom-8 left-8 z-[60] flex flex-col gap-5">
       <motion.a
         href={`https://wa.me/91${phoneNumber}`}
         target="_blank"

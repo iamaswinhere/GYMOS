@@ -41,7 +41,7 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="w-full max-w-xl bg-[#0D0D0D] border border-white/10 rounded-[40px] overflow-hidden relative shadow-[0_0_100px_rgba(255,196,0,0.1)]"
+        className="w-full max-w-2xl bg-[#0D0D0D] border border-white/5 rounded-[32px] md:rounded-[40px] p-6 md:p-12 shadow-2xl relative overflow-hidden"
       >
         <button 
           onClick={onClose}
@@ -50,7 +50,7 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
           <X size={24} />
         </button>
 
-        <div className="p-8 md:p-12">
+        <div className="p-6 md:p-12">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div 
@@ -64,8 +64,8 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
                   <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-6">
                     <User className="text-primary" size={24} />
                   </div>
-                  <h2 className="text-4xl font-black text-white tracking-tighter uppercase">Basic Info</h2>
-                  <p className="text-gray-500 font-medium">Start your journey to elite fitness today.</p>
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase italic">Info <span className="text-primary italic">Protocol</span></h2>
+                  <p className="text-gray-500 font-medium text-sm">Start your journey to elite fitness today.</p>
                 </div>
 
                 <div className="space-y-4">

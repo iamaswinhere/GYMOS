@@ -185,8 +185,8 @@ export default function MembersPage() {
           </div>
       </div>
 
-      {/* Members Table */}
-      <div className="dashboard-card overflow-hidden !p-0 bg-[#0D0D0D]">
+      {/* Desktop Members Table */}
+      <div className="hidden lg:block dashboard-card overflow-hidden !p-0 bg-[#0D0D0D]">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#050505] border-b border-white/5">
@@ -248,6 +248,66 @@ export default function MembersPage() {
           </table>
         </div>
       </div>
+
+      {/* Mobile members list */}
+      <div className="lg:hidden flex flex-col gap-4">
+        {filteredMembers.length === 0 ? (
+          <div className="py-20 bg-[#0D0D0D] border border-white/5 rounded-[32px] flex flex-col items-center justify-center text-center px-6">
+            <Search className="text-white/10 mb-4" size={48} />
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-xs italic">No matching records found.</p>
+          </div>
+        ) : (
+          filteredMembers.map((member) => (
+            <div key={member.id} className="bg-[#0D0D0D] border border-white/5 rounded-[32px] p-6 flex flex-col gap-6 relative overflow-hidden group">
+              <div className="flex items-start justify-between relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary font-black uppercase text-sm">
+                    {member.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="font-black text-white group-hover:text-primary transition-colors tracking-tighter uppercase">{member.name}</h3>
+                    <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">{member.number}</p>
+                  </div>
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border shadow-lg ${getStatusColor(member.status)}`}>
+                  {member.status}
+                </span>
+              </div>
+
+              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/5 grid grid-cols-2 gap-4 relative z-10">
+                <div>
+                  <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Plan</p>
+                  <p className="text-xs font-black text-white italic">{member.plan}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-1">Fee</p>
+                  <p className="text-xs font-black text-primary italic">₹{member.amount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between relative z-10 border-t border-white/5 pt-4">
+                <div>
+                  <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mb-0.5">Expires On</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase">{new Date(member.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleRenew(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-green-500 hover:bg-green-500/10 transition-all border border-white/5" title="Renew">
+                    <RefreshCw size={18} />
+                  </button>
+                  <button onClick={() => handleOpenModal(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/10 transition-all border border-white/5" title="Edit">
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => setMemberToDelete(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all border border-white/5" title="Delete">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent blur-3xl opacity-30 rounded-full group-hover:opacity-60 transition-all`}></div>
+            </div>
+          ))
+        )}
+      </div>
+
 
       <AnimatePresence>
         {/* Registration/Edit Modal */}

@@ -8,8 +8,9 @@ dotenv.config();
 const app = express();
 
 // Middleware
+const allowedOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({
-  origin: '*', // Allow all for initial testing or set specifically: ['http://localhost:3000', 'http://localhost:3001']
+  origin: allowedOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -21,7 +22,7 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });

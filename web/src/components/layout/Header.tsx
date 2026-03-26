@@ -1,9 +1,13 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Bell, User, MessageCircle } from 'lucide-react';
+import { Search, Bell, User, MessageCircle, Menu } from 'lucide-react';
 import { useDashboard } from '@/lib/context/DashboardContext';
 
-const Header = () => {
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+const Header = ({ onMenuClick }: HeaderProps) => {
   const { notifications, setSearchQuery, clearNotifications, revenue, activeMembers, gymTraffic } = useDashboard();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -13,52 +17,59 @@ const Header = () => {
   };
 
   return (
-    <header className="h-20 border-b border-white/5 bg-black/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-40">
-      <div className="flex-1 max-w-xl">
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={20} />
+    <header className="h-20 border-b border-white/5 bg-black/50 backdrop-blur-md px-4 md:px-8 flex items-center justify-between sticky top-0 z-40">
+      <div className="flex items-center gap-4 flex-1 max-w-xl">
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+        
+        <div className="relative group flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
           <input 
             type="text" 
-            placeholder="Search dashboard... (Try: 'John' or 'Low performing months')" 
+            placeholder="Search..." 
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#121212] border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-primary/50 transition-all font-medium"
+            className="w-full bg-[#121212] border border-white/5 rounded-xl py-2.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-primary/50 transition-all font-medium placeholder:text-gray-600"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 md:gap-6 ml-4">
         <button 
           onClick={handleWhatsAppSummary}
           title="Send Summary to WhatsApp"
-          className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 hover:bg-green-500 hover:text-white transition-all border border-green-500/20"
+          className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 hover:bg-green-500 hover:text-white transition-all border border-green-500/20"
         >
-          <MessageCircle size={22} fill="currentColor" fillOpacity={0.1} />
+          <MessageCircle size={20} fill="currentColor" fillOpacity={0.1} />
         </button>
 
         <div className="relative">
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
-            className="w-12 h-12 rounded-2xl bg-[#121212] flex items-center justify-center text-gray-400 hover:text-white transition-all relative border border-white/5"
+            className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-[#121212] flex items-center justify-center text-gray-400 hover:text-white transition-all relative border border-white/5"
           >
-            <Bell size={22} />
+            <Bell size={20} />
             {notifications.length > 0 && (
-              <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-black animate-pulse"></span>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-black animate-pulse"></span>
             )}
           </button>
           
           {showNotifications && (
-            <div className="absolute right-0 mt-4 w-80 bg-[#0D0D0D] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 overflow-hidden">
+            <div className="absolute right-0 mt-4 w-72 md:w-80 bg-[#0D0D0D] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 overflow-hidden">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
-                <h3 className="text-sm font-black text-white">AGENT ALERTS</h3>
-                <button onClick={clearNotifications} className="text-[10px] text-primary font-bold uppercase hover:underline">Clear all</button>
+                <h3 className="text-xs font-black text-white uppercase tracking-widest">Agent Alerts</h3>
+                <button onClick={clearNotifications} className="text-[9px] text-primary font-bold uppercase hover:underline">Clear</button>
               </div>
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {notifications.length === 0 ? (
-                  <p className="text-gray-500 text-xs italic text-center py-4">No active alerts from the Data Agent.</p>
+                  <p className="text-gray-500 text-[10px] italic text-center py-4">No active alerts.</p>
                 ) : (
                   notifications.map((note, i) => (
-                    <div key={i} className="bg-red-500/10 border-l-4 border-red-500 p-3 rounded-r-lg">
-                      <p className="text-[11px] text-white leading-relaxed font-medium">{note}</p>
+                    <div key={i} className="bg-red-500/5 border-l-2 border-red-500 p-2.5 rounded-r-lg">
+                      <p className="text-[10px] text-white/90 leading-relaxed font-medium">{note}</p>
                     </div>
                   ))
                 )}
@@ -67,13 +78,13 @@ const Header = () => {
           )}
         </div>
         
-        <div className="flex items-center gap-3 pl-6 border-l border-white/5">
-          <div className="text-right">
-            <p className="text-sm font-black text-white">GYMOS ADMIN</p>
-            <p className="text-[10px] text-primary font-bold tracking-widest uppercase">Lead Manager</p>
+        <div className="flex items-center gap-3 pl-2 md:pl-6 border-l border-white/5">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs font-black text-white uppercase tracking-tight">Admin</p>
+            <p className="text-[9px] text-primary font-bold tracking-widest uppercase">Lead</p>
           </div>
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20">
-            <User className="text-primary" size={24} />
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl md:rounded-2xl flex items-center justify-center border border-primary/20">
+            <User className="text-primary" size={20} />
           </div>
         </div>
       </div>

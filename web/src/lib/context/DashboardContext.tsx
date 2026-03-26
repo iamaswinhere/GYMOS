@@ -2,7 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-const BASE_URL = 'http://localhost:5001/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const SOCKET_URL = BASE_URL.replace('/api', '');
 
 export interface Member {
   id: string;
@@ -174,7 +175,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     fetchAllData();
 
     // Setup Socket.io
-    const socket = io('http://localhost:5001');
+    const socket = io(SOCKET_URL);
 
     socket.on('attendanceUpdate', (data: { memberName: string, checkInTime: string }) => {
       setState(prev => ({

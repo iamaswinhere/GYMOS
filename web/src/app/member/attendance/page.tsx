@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMember } from '@/lib/context/MemberContext';
 import { Html5Qrcode } from 'html5-qrcode';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 export default function MemberAttendance() {
   const router = useRouter();

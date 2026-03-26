@@ -5,7 +5,7 @@ import { useMember } from '@/lib/context/MemberContext';
 import { useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 
-const API_URL = 'http://localhost:5001';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api').replace('/api', '');
 
 export default function MemberDashboard() {
   const { member, logout, refreshMember } = useMember();
