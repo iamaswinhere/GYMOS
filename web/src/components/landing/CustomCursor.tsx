@@ -8,8 +8,18 @@ const CustomCursor = () => {
     const mouseX = useSpring(0, { stiffness: 500, damping: 28 });
     const mouseY = useSpring(0, { stiffness: 500, damping: 28 });
 
+    const [isVisible, setIsVisible] = useState(false);
+
     useEffect(() => {
+        const checkVisibility = () => {
+            setIsVisible(window.innerWidth >= 768);
+        };
+
+        checkVisibility();
+        window.addEventListener('resize', checkVisibility);
+        
         const handleMouseMove = (e: MouseEvent) => {
+            if (window.innerWidth < 768) return;
             mouseX.set(e.clientX);
             mouseY.set(e.clientY);
 
@@ -18,8 +28,13 @@ const CustomCursor = () => {
         };
 
         window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+        return () => {
+            window.removeEventListener('resize', checkVisibility);
+            window.removeEventListener('mousemove', handleMouseMove);
+        };
     }, [mouseX, mouseY]);
+
+    if (!isVisible) return null;
 
     return (
         <>
