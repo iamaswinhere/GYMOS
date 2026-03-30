@@ -141,7 +141,8 @@ router.post('/renew/:id', async (req, res) => {
       memberName: member.name,
       amount: amountPaid || member.membershipPlan.price,
       date: now,
-      plan: member.membershipPlan.name
+      plan: member.membershipPlan.name,
+      type: 'renewal'
     });
 
     // 2. GENERATE PDF BILL
@@ -193,7 +194,8 @@ router.post('/renew/:id', async (req, res) => {
     res.json({ 
       member, 
       pdf: pdfBase64,
-      message: 'Renewal successful'
+      message: 'Renewal successful',
+      newExpiry: member.expiryDate
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

@@ -84,7 +84,13 @@ const AttendanceScannerScreen = ({ navigation }: any) => {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.overlay}>
-          <View style={styles.scanBox} />
+          <View style={styles.scanBox}>
+            <View style={styles.cornerTopLeft} />
+            <View style={styles.cornerTopRight} />
+            <View style={styles.cornerBottomLeft} />
+            <View style={styles.cornerBottomRight} />
+            <View style={styles.scanLine} />
+          </View>
         </View>
       </View>
 
@@ -142,11 +148,26 @@ const styles = StyleSheet.create({
   scanBox: {
     width: 250,
     height: 250,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
     backgroundColor: 'transparent',
-    borderRadius: 20
+    position: 'relative',
+    overflow: 'hidden'
   },
+  scanLine: {
+    position: 'absolute',
+    width: '100%',
+    height: 2,
+    backgroundColor: COLORS.primary,
+    top: '50%', // In a real app we'd animate this, but for now we set a static middle marker or top
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  cornerTopLeft: { position: 'absolute', top: 0, left: 0, width: 20, height: 20, borderTopWidth: 4, borderLeftWidth: 4, borderColor: COLORS.primary, borderTopLeftRadius: 15 },
+  cornerTopRight: { position: 'absolute', top: 0, right: 0, width: 20, height: 20, borderTopWidth: 4, borderRightWidth: 4, borderColor: COLORS.primary, borderTopRightRadius: 15 },
+  cornerBottomLeft: { position: 'absolute', bottom: 0, left: 0, width: 20, height: 20, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: COLORS.primary, borderBottomLeftRadius: 15 },
+  cornerBottomRight: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderBottomWidth: 4, borderRightWidth: 4, borderColor: COLORS.primary, borderBottomRightRadius: 15 },
   footer: {
     padding: SIZES.padding,
     paddingBottom: 40,

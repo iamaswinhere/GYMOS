@@ -83,38 +83,46 @@ const DashboardScreen = ({ navigation }: any) => {
   const isExpired = daysLeft <= 0;
 
   const handleRenewUPI = async () => {
-    // Note: Actual UPI deep link `upi://pay?pa=gym@upi&pn=GYMOS&am=1000&cu=INR`
-    // Since we are simulating, we ask user if payment was successful right away
-    Alert.alert('Simulate UPI Payment', 'Redirecting to UPI App (GPay/PhonePe)...', [
+    const upiUrl = `upi://pay?pa=gym@upi&pn=GYMOS&am=${member?.membershipPlan?.price || 1000}&cu=INR&tn=Membership Renewal - ${member.name}`;
+    
+    Alert.alert('Renew Membership', 'You will be redirected to your UPI app (GPay/PhonePe/Paytm) to complete the payment.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Payment Successful', onPress: async () => {
+      { text: 'Open UPI App', onPress: async () => {
         try {
-          // Add 1 month to expiry date via backend renew
-          const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ durationMonths: 1 })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            Alert.alert(
-              'Success', 
-              'Membership renewed for 1 month! Would you like to download your receipt?',
-              [
-                { text: 'Later', style: 'cancel' },
-                { text: 'Download PDF', onPress: () => {
-                  if (data.pdf) {
-                    Linking.openURL(data.pdf);
+          const supported = await Linking.canOpenURL(upiUrl);
+          if (supported) {
+            await Linking.openURL(upiUrl);
+            
+            // Post-payment check
+            setTimeout(() => {
+              Alert.alert('Confirm Payment', 'Did you complete the payment successfully in the UPI app?', [
+                { text: 'No', style: 'cancel' },
+                { text: 'Yes, Success', onPress: async () => {
+                  try {
+                    const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ durationMonths: 1 })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      Alert.alert('Success', 'Membership renewed! Download receipt?', [
+                        { text: 'Later', style: 'cancel' },
+                        { text: 'Download PDF', onPress: () => data.pdf && Linking.openURL(data.pdf) }
+                      ]);
+                      await refreshMember();
+                    }
+                  } catch (e) {
+                    Alert.alert('Error', 'Network error while confirming renewal');
                   }
                 }}
-              ]
-            );
-            await refreshMember();
+              ]);
+            }, 2000);
           } else {
-             Alert.alert('Error', 'Failed to renew membership on server');
+            Alert.alert('Error', 'No UPI app found on this device');
           }
         } catch (e) {
-          Alert.alert('Error', 'Network error while renewing');
+          Alert.alert('Error', 'Could not open UPI app');
         }
       }}
     ]);
@@ -130,6 +138,9 @@ const DashboardScreen = ({ navigation }: any) => {
           <View>
             <Text style={styles.welcomeText}>HELLO,</Text>
             <Text style={styles.nameText}>{member?.name?.toUpperCase() || 'MEMBER'}</Text>
+            <View style={styles.idBadge}>
+                <Text style={styles.idText}>ID: {member?._id?.slice(-8).toUpperCase()}</Text>
+            </View>
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={[styles.iconBtn, { marginRight: 10 }]} onPress={() => navigation.navigate('Scanner')}>
@@ -213,6 +224,8 @@ const styles = StyleSheet.create({
   welcomeText: { color: '#666', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
   nameText: { color: COLORS.white, fontSize: 24, fontWeight: '900', letterSpacing: -1, maxWidth: 220 },
   headerRight: { flexDirection: 'row' },
+  idBadge: { backgroundColor: 'rgba(255,196,0,0.1)', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginTop: 4, borderWidth: 1, borderColor: 'rgba(255,196,0,0.2)' },
+  idText: { color: COLORS.primary, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   iconBtn: { width: 45, height: 45, borderRadius: 15, backgroundColor: COLORS.darkGray, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   statusCard: { backgroundColor: COLORS.darkGray, borderRadius: SIZES.radius, padding: 24, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   statusHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

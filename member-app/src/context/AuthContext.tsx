@@ -25,6 +25,16 @@ export const AuthProvider = ({ children }: any) => {
     }
   };
 
+  useEffect(() => {
+    let interval: any;
+    if (member) {
+      interval = setInterval(() => {
+        refreshMember();
+      }, 60000); // Check every minute
+    }
+    return () => clearInterval(interval);
+  }, [member]);
+
   const login = async (mobileNumber: string) => {
     try {
       const response = await fetch(`${API_URL}/api/members/login`, {
