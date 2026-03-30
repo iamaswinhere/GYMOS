@@ -13,7 +13,7 @@ router.post('/login', async (req, res) => {
 
     const member = await Member.findOne({ mobileNumber });
     if (!member) {
-      return res.status(404).json({ message: 'Member not found. Please join at the gym.' });
+      return res.status(404).json({ message: 'No member found in this mobile number' });
     }
 
     // Check membership status and expiry
