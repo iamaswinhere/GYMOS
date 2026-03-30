@@ -6,6 +6,7 @@ import {
   ScrollView, 
   TouchableOpacity,
   StatusBar,
+  Platform,
   SafeAreaView,
   Alert,
   Linking
@@ -62,13 +63,21 @@ const DashboardScreen = ({ navigation }: any) => {
   };
 
   const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: async () => {
-        await logout();
-        navigation.replace('Login');
-      }}
-    ]);
+    const performLogout = async () => {
+      await logout();
+      navigation.replace('Login');
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to log out?')) {
+        performLogout();
+      }
+    } else {
+      Alert.alert('Logout', 'Are you sure you want to log out?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log Out', style: 'destructive', onPress: performLogout }
+      ]);
+    }
   };
 
   const calculateDaysLeft = () => {
@@ -83,49 +92,77 @@ const DashboardScreen = ({ navigation }: any) => {
   const isExpired = daysLeft <= 0;
 
   const handleRenewUPI = async () => {
-    const upiUrl = `upi://pay?pa=gym@upi&pn=GYMOS&am=${member?.membershipPlan?.price || 1000}&cu=INR&tn=Membership Renewal - ${member.name}`;
+    const upiId = 'gym@upi';
+    const amount = member?.membershipPlan?.price || 1000;
+    const upiUrl = `upi://pay?pa=${upiId}&pn=GYMOS&am=${amount}&cu=INR&tn=Membership Renewal - ${member.name}`;
     
-    Alert.alert('Renew Membership', 'You will be redirected to your UPI app (GPay/PhonePe/Paytm) to complete the payment.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Open UPI App', onPress: async () => {
-        try {
+    const confirmPayment = () => {
+      setTimeout(() => {
+        const msg = 'Did you complete the payment successfully in the UPI app?';
+        const onConfirm = async () => {
+          try {
+            const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ durationMonths: 1 })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              alert('Membership renewed! Download receipt starting...');
+              if (data.pdf) Linking.openURL(data.pdf);
+              await refreshMember();
+            }
+          } catch (e) {
+            alert('Network error while confirming renewal');
+          }
+        };
+
+        if (Platform.OS === 'web') {
+          if (window.confirm(msg)) onConfirm();
+        } else {
+          Alert.alert('Confirm Payment', msg, [
+            { text: 'No', style: 'cancel' },
+            { text: 'Yes, Success', onPress: onConfirm }
+          ]);
+        }
+      }, 2000);
+    };
+
+    const openUpi = async () => {
+      try {
+        if (Platform.OS === 'web') {
+          // On web, we just try to open and provide a fallback
+          window.location.href = upiUrl;
+          confirmPayment();
+        } else {
           const supported = await Linking.canOpenURL(upiUrl);
           if (supported) {
             await Linking.openURL(upiUrl);
-            
-            // Post-payment check
-            setTimeout(() => {
-              Alert.alert('Confirm Payment', 'Did you complete the payment successfully in the UPI app?', [
-                { text: 'No', style: 'cancel' },
-                { text: 'Yes, Success', onPress: async () => {
-                  try {
-                    const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ durationMonths: 1 })
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      Alert.alert('Success', 'Membership renewed! Download receipt?', [
-                        { text: 'Later', style: 'cancel' },
-                        { text: 'Download PDF', onPress: () => data.pdf && Linking.openURL(data.pdf) }
-                      ]);
-                      await refreshMember();
-                    }
-                  } catch (e) {
-                    Alert.alert('Error', 'Network error while confirming renewal');
-                  }
-                }}
-              ]);
-            }, 2000);
+            confirmPayment();
           } else {
-            Alert.alert('Error', 'No UPI app found on this device');
+            Alert.alert('Error', 'No UPI app found. Please copy UPI ID: ' + upiId);
           }
-        } catch (e) {
-          Alert.alert('Error', 'Could not open UPI app');
         }
-      }}
-    ]);
+      } catch (e) {
+        if (Platform.OS === 'web') {
+            alert('If UPI app didn\'t open, please use UPI ID: ' + upiId);
+            confirmPayment();
+        } else {
+            Alert.alert('Error', 'Could not open UPI app');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Open UPI app to pay ₹${amount}?`)) {
+        openUpi();
+      }
+    } else {
+      Alert.alert('Renew Membership', `You will be redirected to your UPI app to pay ₹${amount}.`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open UPI App', onPress: openUpi }
+      ]);
+    }
   };
 
   return (
