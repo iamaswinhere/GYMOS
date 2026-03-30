@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { AlertCircle, QrCode, LogOut, Calendar } from 'lucide-react';
 import { useMember } from '@/lib/context/MemberContext';
 import { useRouter } from 'next/navigation';
@@ -8,9 +8,22 @@ import { io } from 'socket.io-client';
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api').replace('/api', '');
 
 export default function MemberDashboard() {
-  const { member, logout, refreshMember } = useMember();
+  const { member, token, logout, refreshMember } = useMember();
   const [events, setEvents] = useState<any[]>([]);
   const router = useRouter();
+
+  const fetchEvents = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/api/events/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setEvents(data);
+    } catch (e) {
+      console.log('Failed to fetch events', e);
+    }
+  }, [token]);
 
   useEffect(() => {
     fetchEvents();
@@ -27,17 +40,7 @@ export default function MemberDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, []);
-
-  const fetchEvents = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/events/all`);
-      const data = await res.json();
-      setEvents(data);
-    } catch (e) {
-      console.log('Failed to fetch events', e);
-    }
-  };
+  }, [fetchEvents]);
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to log out?')) {
@@ -50,7 +53,10 @@ export default function MemberDashboard() {
       try {
         const res = await fetch(`${API_URL}/api/members/renew/${member?._id}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ durationMonths: 1 })
         });
         

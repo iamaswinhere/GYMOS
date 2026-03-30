@@ -9,7 +9,7 @@ import { API_URL } from '../constants/config';
 const AttendanceScannerScreen = ({ navigation }: any) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const { member } = useContext(AuthContext);
+  const { member, token } = useContext(AuthContext);
 
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
@@ -28,6 +28,7 @@ const AttendanceScannerScreen = ({ navigation }: any) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ memberId: member._id })
       });

@@ -2,12 +2,18 @@ const express = require('express');
 const router = express.Router();
 const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
+const { auth } = require('../middleware/auth');
 
 // Mark attendance
-router.post('/mark', async (req, res) => {
+router.post('/mark', auth, async (req, res) => {
   try {
     const { memberId } = req.body;
     
+    // Security: A member can only mark attendance for themselves unless they are an admin
+    if (req.userRole !== 'admin' && req.user !== memberId) {
+      return res.status(403).json({ message: 'Unauthorized: You can only mark attendance for yourself' });
+    }
+
     // Check if member exists
     const member = await Member.findById(memberId);
     if (!member) {

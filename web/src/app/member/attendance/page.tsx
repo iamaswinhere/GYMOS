@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 export default function MemberAttendance() {
   const router = useRouter();
-  const { member } = useMember();
+  const { member, token } = useMember();
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -58,7 +58,10 @@ export default function MemberAttendance() {
     try {
       const response = await fetch(`${API_URL}/attendance/mark`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ memberId: member?._id })
       });
 

@@ -1,22 +1,27 @@
 "use client";
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Dumbbell, Lock, User, ArrowRight } from 'lucide-react';
+import { useDashboard } from '@/lib/context/DashboardContext';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useDashboard();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin') {
-      localStorage.setItem('gymos_admin_session', 'active');
-      router.push('/');
-    } else {
-      setError('Invalid credentials. Hint: use admin/admin');
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      await login(username, password);
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials. Please check your username and password.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,6 +55,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -64,17 +70,28 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
 
-          {error ? <p className="text-red-500 text-sm font-bold text-center">{error}</p> : null}
+          {error ? (
+            <motion.p 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="text-red-500 text-sm font-bold text-center bg-red-500/10 py-3 rounded-xl border border-red-500/20"
+            >
+              {error}
+            </motion.p>
+          ) : null}
 
           <button 
             type="submit" 
-            className="w-full bg-primary text-black font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            disabled={isLoading}
+            className="w-full bg-primary text-black font-black py-4 rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
-            LOGIN TO DASHBOARD <ArrowRight size={20} strokeWidth={3} />
+            {isLoading ? "AUTHENTICATING..." : "LOGIN TO DASHBOARD"} 
+            {!isLoading && <ArrowRight size={20} strokeWidth={3} />}
           </button>
         </form>
 

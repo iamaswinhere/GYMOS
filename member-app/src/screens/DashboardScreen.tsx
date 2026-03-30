@@ -30,11 +30,13 @@ import { API_URL } from '../constants/config';
 import { io } from 'socket.io-client';
 
 const DashboardScreen = ({ navigation }: any) => {
-  const { member, logout, refreshMember } = useContext(AuthContext);
+  const { member, token, logout, refreshMember } = useContext(AuthContext);
   const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchEvents();
+    if (token) {
+      fetchEvents();
+    }
 
     // Setup Real-time connection
     const socket = io(API_URL);
@@ -50,11 +52,15 @@ const DashboardScreen = ({ navigation }: any) => {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/events/all`);
+      const res = await fetch(`${API_URL}/api/events/all`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       setEvents(data);
     } catch (e) {
@@ -103,7 +109,10 @@ const DashboardScreen = ({ navigation }: any) => {
           try {
             const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
               body: JSON.stringify({ durationMonths: 1 })
             });
             if (res.ok) {

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
+const { auth, adminOnly } = require('../middleware/auth');
 
-// Create event
-router.post('/add', async (req, res) => {
+// Create event (Admin Only)
+router.post('/add', auth, adminOnly, async (req, res) => {
   try {
     const newEvent = new Event(req.body);
     const savedEvent = await newEvent.save();
@@ -17,8 +18,8 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// Get all events
-router.get('/all', async (req, res) => {
+// Get all events (Auth Only)
+router.get('/all', auth, async (req, res) => {
   try {
     const events = await Event.find().sort({ date: 1 });
     res.json(events);
@@ -27,8 +28,8 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// Delete event
-router.delete('/delete/:id', async (req, res) => {
+// Delete event (Admin Only)
+router.delete('/delete/:id', auth, adminOnly, async (req, res) => {
   try {
     await Event.findByIdAndDelete(req.params.id);
     

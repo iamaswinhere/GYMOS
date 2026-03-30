@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Lead = require('../models/Lead');
+const { auth, adminOnly } = require('../middleware/auth');
 
-// Create a new lead from landing page
+// Create a new lead from landing page (PUBLIC)
 router.post('/add', async (req, res) => {
   try {
     const { name, phone, plan, hasPT } = req.body;
@@ -34,8 +35,8 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// Get all leads (for admin panel if needed later)
-router.get('/all', async (req, res) => {
+// Get all leads (Admin Only)
+router.get('/all', auth, adminOnly, async (req, res) => {
   try {
     const leads = await Lead.find().sort({ createdAt: -1 });
     res.json(leads);

@@ -20,4 +20,9 @@ adminSchema.pre('save', async function() {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
+// Compare password method
+adminSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
 module.exports = mongoose.model('Admin', adminSchema);

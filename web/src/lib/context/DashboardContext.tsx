@@ -1,16 +1,18 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import { useRouter, usePathname } from 'next/navigation';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const SOCKET_URL = BASE_URL.replace('/api', '');
 
+// ... (interfaces remain same)
 export interface Member {
   id: string;
   name: string;
   number: string;
   plan: string;
-  status: 'active' | 'expired' | 'stopped';
+  status: 'active' | 'expired' | 'stopped' | 'pending';
   expiry: string;
   amount: number;
   date: string;
@@ -20,12 +22,12 @@ export interface Member {
 export interface GymEvent {
   id: string;
   name: string;
-  date: string; // Combined date and time
+  date: string;
   location: string;
   imageUrl?: string;
   status: 'upcoming' | 'completed' | 'cancelled';
 }
- 
+
 export interface SiteSettings {
   notifications: {
     whatsappSummaries: boolean;
@@ -55,9 +57,13 @@ interface DashboardState {
   isLoading: boolean;
   settings: SiteSettings;
   payments: Member[];
+  token: string | null;
+  admin: any | null;
 }
 
 interface DashboardContextType extends DashboardState {
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
@@ -72,6 +78,8 @@ interface DashboardContextType extends DashboardState {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<DashboardState>({
     revenue: 0,
     activeMembers: 0,
@@ -92,24 +100,55 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         trafficThresholdAlerts: false
       }
     },
-    payments: []
+    payments: [],
+    token: null,
+    admin: null
   });
 
-  const fetchAllData = async () => {
+  const logout = useCallback(() => {
+    localStorage.removeItem('gymos_admin_token');
+    localStorage.removeItem('gymos_admin_data');
+    setState(prev => ({ ...prev, token: null, admin: null }));
+    router.push('/admin/login');
+  }, [router]);
+
+  const authenticatedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    const token = state.token || localStorage.getItem('gymos_admin_token');
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    const response = await fetch(url, { ...options, headers });
+    
+    if (response.status === 401 || response.status === 403) {
+      logout();
+      throw new Error("Unauthorized");
+    }
+    
+    return response;
+  }, [state.token, logout]);
+
+  const fetchAllData = useCallback(async () => {
+    if (!state.token && !localStorage.getItem('gymos_admin_token')) return;
+
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      const membersRes = await fetch(`${BASE_URL}/members/all`);
-      const membersData = await membersRes.json();
-      
-      const eventsRes = await fetch(`${BASE_URL}/events/all`);
-      const eventsData = await eventsRes.json();
- 
-      const paymentsRes = await fetch(`${BASE_URL}/payments/all`);
-      const paymentsData = await paymentsRes.json();
- 
-      const settingsRes = await fetch(`${BASE_URL}/admin/settings`);
-      const settingsData = await settingsRes.json();
+      const [membersRes, eventsRes, paymentsRes, settingsRes] = await Promise.all([
+        authenticatedFetch(`${BASE_URL}/members/all`),
+        authenticatedFetch(`${BASE_URL}/events/all`),
+        authenticatedFetch(`${BASE_URL}/payments/all`),
+        authenticatedFetch(`${BASE_URL}/admin/settings`)
+      ]);
+
+      const [membersData, eventsData, paymentsData, settingsData] = await Promise.all([
+        membersRes.json(),
+        eventsRes.json(),
+        paymentsRes.json(),
+        settingsRes.json()
+      ]);
 
       const members = (membersData || []).map((m: any) => ({
         id: m._id,
@@ -123,13 +162,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         createdAt: m.createdAt
       }));
 
-      // Calculate total revenue from PAYMENT collection for persistence
       const totalRevenue = (paymentsData || []).reduce((sum: number, p: any) => sum + p.amount, 0);
       
-      // Inject payments as "activity" into members list so they show up in "Recent Signups" instantly after reload
       const activityFromPayments = (paymentsData || []).map((p: any) => ({
         id: p._id,
-        name: p.memberId?.name || 'Member', // This might need a populate in backend, but for now we'll use member data
+        name: p.memberId?.name || 'Member',
         number: '',
         plan: p.planName,
         status: 'active' as const,
@@ -169,12 +206,28 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Failed to fetch data", error);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  };
+  }, [state.token, authenticatedFetch]);
 
   useEffect(() => {
+    const token = localStorage.getItem('gymos_admin_token');
+    const adminData = localStorage.getItem('gymos_admin_data');
+    
+    if (token && adminData) {
+      setState(prev => ({ 
+        ...prev, 
+        token, 
+        admin: JSON.parse(adminData) 
+      }));
+    } else if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+      router.push('/admin/login');
+    }
+  }, [pathname, router]);
+
+  useEffect(() => {
+    if (!state.token) return;
+
     fetchAllData();
 
-    // Setup Socket.io
     const socket = io(SOCKET_URL);
 
     socket.on('attendanceUpdate', (data: { memberName: string, checkInTime: string }) => {
@@ -216,7 +269,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     socket.on('paymentUpdate', (data: { memberName: string, amount: number, plan: string, memberId: string, date: string }) => {
       setState(prev => {
-        // Just update the revenue, notifications, and add to the payments feed
         const paymentRecord = {
           id: `payment_${Date.now()}_${data.memberId}`,
           name: data.memberName,
@@ -229,8 +281,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           createdAt: data.date
         };
 
-        // Also update the existing member's status/expiry if they're in the list
-        // Note: Real update happens via server, but we sync UI here if we have info
         const updatedMembers = prev.members.map(m => 
           m.id === data.memberId ? { ...m, status: 'active' as const } : m
         );
@@ -248,9 +298,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
     });
 
-    // Live traffic simulation - starts at random, updates occasionally
-    setState(prev => ({ ...prev, gymTraffic: Math.floor(Math.random() * 30 + 60) }));
-    
     const interval = setInterval(() => {
         setState(prev => ({ 
             ...prev, 
@@ -262,7 +309,36 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       socket.disconnect();
       clearInterval(interval);
     };
-  }, []);
+  }, [state.token, fetchAllData]);
+
+  const login = async (username: string, password: string) => {
+    try {
+      const res = await fetch(`${BASE_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Login failed');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('gymos_admin_token', data.token);
+      localStorage.setItem('gymos_admin_data', JSON.stringify(data.admin));
+      
+      setState(prev => ({ 
+        ...prev, 
+        token: data.token, 
+        admin: data.admin 
+      }));
+      
+      router.push('/admin');
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   const addMember = async (memberData: Omit<Member, 'id'>) => {
     try {
@@ -278,30 +354,24 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         expiryDate: new Date(memberData.expiry)
       };
 
-      const res = await fetch(`${BASE_URL}/members/add`, {
+      const res = await authenticatedFetch(`${BASE_URL}/members/add`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       
-        if (res.ok) {
+      if (res.ok) {
         const savedMember = await res.json();
-        
-        // WhatsApp Notification to Owner
-        const ownerNumber = '919567950284'; // Replace with Gym Owner number
+        const ownerNumber = '919567950284';
         const waMessage = encodeURIComponent(
           `🏋️ *GYMOS New Signup Alert!*\n\n` +
           `👤 *Name:* ${savedMember.name}\n` +
-          `📱 *Phone:* ${savedMember.mobileNumber || memberData.number}\n` +
+          `📱 *Phone:* ${savedMember.mobileNumber}\n` +
           `💳 *Plan:* ${savedMember.membershipPlan.name}\n` +
           `💰 *Amount Paid:* ₹${savedMember.membershipPlan.price}\n` +
           `📅 *Expiry:* ${new Date(savedMember.expiryDate).toLocaleDateString()}\n\n` +
           `_Real-time update from GYMOS Admin Portal._`
         );
-        
-        // Open WhatsApp in a new tab for the admin to confirm/send
         window.open(`https://wa.me/${ownerNumber}?text=${waMessage}`, '_blank');
-        
         await fetchAllData();
       }
     } catch (error) {
@@ -323,15 +393,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         };
       }
 
-      const res = await fetch(`${BASE_URL}/members/update/${id}`, {
+      await authenticatedFetch(`${BASE_URL}/members/update/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
-      if (res.ok) {
-        await fetchAllData();
-      }
+      await fetchAllData();
     } catch (error) {
        console.error("Update member failed", error);
     }
@@ -339,12 +405,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const deleteMember = async (id: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/members/delete/${id}`, {
+      await authenticatedFetch(`${BASE_URL}/members/delete/${id}`, {
         method: 'DELETE'
       });
-      if (res.ok) {
-        await fetchAllData();
-      }
+      await fetchAllData();
     } catch (error) {
        console.error("Delete failed", error);
     }
@@ -352,14 +416,11 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const addEvent = async (eventData: Omit<GymEvent, 'id'>) => {
     try {
-      const res = await fetch(`${BASE_URL}/events/add`, {
+      await authenticatedFetch(`${BASE_URL}/events/add`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData)
       });
-      if (res.ok) {
-        await fetchAllData();
-      }
+      await fetchAllData();
     } catch (error) {
        console.error("Event add failed", error);
     }
@@ -367,20 +428,32 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const deleteEvent = async (id: string) => {
     try {
-      const res = await fetch(`${BASE_URL}/events/delete/${id}`, {
+      await authenticatedFetch(`${BASE_URL}/events/delete/${id}`, {
         method: 'DELETE'
       });
-      if (res.ok) {
-        await fetchAllData();
-      }
+      await fetchAllData();
     } catch (error) {
        console.error("Event delete failed", error);
     }
   };
 
+  const updateSettings = async (newSettings: Partial<SiteSettings>) => {
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/admin/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(newSettings)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setState(prev => ({ ...prev, settings: updated }));
+      }
+    } catch (error) {
+      console.error("Update settings failed", error);
+    }
+  };
+
   const setSearchQuery = (query: string) => {
     const lowerQuery = query.toLowerCase();
-    
     let highlightedMonth = null;
     if (lowerQuery.includes("low performing") || lowerQuery.includes("dip") || lowerQuery.includes("june")) {
       highlightedMonth = 'Jun';
@@ -390,7 +463,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (query.trim() !== "") {
       searchResult = state.members.filter(m => 
         m.name.toLowerCase().includes(lowerQuery) || 
-        m.number.includes(query)
+        (m.number && m.number.includes(query))
       );
     }
 
@@ -436,6 +509,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   return (
     <DashboardContext.Provider value={{ 
       ...state, 
+      login,
+      logout,
       addMember, 
       updateMember,
       deleteMember,
@@ -444,21 +519,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSearchQuery, 
       generateAIReport,
       clearNotifications,
-      updateSettings: async (newSettings) => {
-        try {
-          const res = await fetch(`${BASE_URL}/admin/settings`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newSettings)
-          });
-          if (res.ok) {
-            const updated = await res.json();
-            setState(prev => ({ ...prev, settings: updated }));
-          }
-        } catch (error) {
-          console.error("Update settings failed", error);
-        }
-      }
+      updateSettings
     }}>
       {children}
     </DashboardContext.Provider>

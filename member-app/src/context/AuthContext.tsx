@@ -1,39 +1,32 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../constants/config'; // I should create this config file
+import { API_URL } from '../constants/config';
 
 export const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: any) => {
   const [member, setMember] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadMember();
-  }, []);
-
-  const loadMember = async () => {
+  const loadAuthData = async () => {
     try {
       const storedMember = await AsyncStorage.getItem('memberInfo');
-      if (storedMember) {
+      const storedToken = await AsyncStorage.getItem('userToken');
+      if (storedMember && storedToken) {
         setMember(JSON.parse(storedMember));
+        setToken(storedToken);
       }
     } catch (e) {
-      console.log('Failed to load member info', e);
+      console.log('Failed to load auth data', e);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    let interval: any;
-    if (member) {
-      interval = setInterval(() => {
-        refreshMember();
-      }, 60000); // Check every minute
-    }
-    return () => clearInterval(interval);
-  }, [member]);
+    loadAuthData();
+  }, []);
 
   const login = async (mobileNumber: string) => {
     try {
@@ -50,8 +43,10 @@ export const AuthProvider = ({ children }: any) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      setMember(data);
-      await AsyncStorage.setItem('memberInfo', JSON.stringify(data));
+      setMember(data.member);
+      setToken(data.token);
+      await AsyncStorage.setItem('memberInfo', JSON.stringify(data.member));
+      await AsyncStorage.setItem('userToken', data.token);
       return data;
     } catch (error) {
       throw error;
@@ -60,17 +55,29 @@ export const AuthProvider = ({ children }: any) => {
 
   const logout = async () => {
     setMember(null);
+    setToken(null);
     await AsyncStorage.removeItem('memberInfo');
+    await AsyncStorage.removeItem('userToken');
   };
 
-  const refreshMember = async () => {
+  const refreshMember = useCallback(async () => {
     if (member?.mobileNumber) {
       await login(member.mobileNumber);
     }
-  };
+  }, [member?.mobileNumber]);
+
+  useEffect(() => {
+    let interval: any;
+    if (token) {
+      interval = setInterval(() => {
+        refreshMember();
+      }, 300000); // Check every 5 minutes instead of 1 minute to reduce overhead
+    }
+    return () => clearInterval(interval);
+  }, [token, refreshMember]);
 
   return (
-    <AuthContext.Provider value={{ member, isLoading, login, logout, refreshMember }}>
+    <AuthContext.Provider value={{ member, token, isLoading, login, logout, refreshMember }}>
       {children}
     </AuthContext.Provider>
   );

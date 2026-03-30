@@ -7,7 +7,7 @@ export interface MemberInfo {
   _id: string;
   name: string;
   mobileNumber: string;
-  membershipStatus: 'active' | 'expired' | 'stopped';
+  membershipStatus: 'active' | 'expired' | 'stopped' | 'pending';
   membershipPlan: { name: string; durationMonths: number; price: number };
   expiryDate: string;
   joiningDate: string;
@@ -15,6 +15,7 @@ export interface MemberInfo {
 
 interface MemberContextType {
   member: MemberInfo | null;
+  token: string | null;
   isLoading: boolean;
   login: (mobileNumber: string) => Promise<void>;
   logout: () => void;
@@ -25,12 +26,17 @@ const MemberContext = createContext<MemberContextType | undefined>(undefined);
 
 export const MemberProvider = ({ children }: { children: React.ReactNode }) => {
   const [member, setMember] = useState<MemberInfo | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('gymos_member_info');
-    if (stored) {
-      try { setMember(JSON.parse(stored)); } catch {}
+    const storedInfo = localStorage.getItem('gymos_member_info');
+    const storedToken = localStorage.getItem('gymos_member_token');
+    if (storedInfo && storedToken) {
+      try { 
+        setMember(JSON.parse(storedInfo)); 
+        setToken(storedToken);
+      } catch {}
     }
     setIsLoading(false);
   }, []);
@@ -43,13 +49,18 @@ export const MemberProvider = ({ children }: { children: React.ReactNode }) => {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Login failed');
-    setMember(data);
-    localStorage.setItem('gymos_member_info', JSON.stringify(data));
+    
+    setMember(data.member);
+    setToken(data.token);
+    localStorage.setItem('gymos_member_info', JSON.stringify(data.member));
+    localStorage.setItem('gymos_member_token', data.token);
   };
 
   const logout = () => {
     setMember(null);
+    setToken(null);
     localStorage.removeItem('gymos_member_info');
+    localStorage.removeItem('gymos_member_token');
   };
 
   const refreshMember = async () => {
@@ -57,7 +68,7 @@ export const MemberProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <MemberContext.Provider value={{ member, isLoading, login, logout, refreshMember }}>
+    <MemberContext.Provider value={{ member, token, isLoading, login, logout, refreshMember }}>
       {children}
     </MemberContext.Provider>
   );

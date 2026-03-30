@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const Payment = require('../models/Payment');
+const jwt = require('jsonwebtoken');
+const { auth, adminOnly } = require('../middleware/auth');
 
 // Login member
 router.post('/login', async (req, res) => {
@@ -27,21 +29,28 @@ router.post('/login', async (req, res) => {
         });
     }
 
-    res.json(member);
+    // CREATE JWT FOR MEMBER
+    const token = jwt.sign(
+      { id: member._id, role: 'member' },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' } // Member app usually stays logged in longer
+    );
+
+    res.json({ token, member });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Create a new member
-router.post('/add', async (req, res) => {
+// Create a new member (Admin Only)
+router.post('/add', auth, adminOnly, async (req, res) => {
   try {
     const { name, mobileNumber, email, dateOfBirth, membershipPlan } = req.body;
     
     // Calculate expiry date based on plan
     const joiningDate = new Date();
     const expiryDate = new Date();
-    expiryDate.setMonth(expiryDate.getMonth() + membershipPlan.durationMonths);
+    expiryDate.setMonth(expiryDate.getMonth() + parseInt(membershipPlan.durationMonths));
 
     const newMember = new Member({
       name,
@@ -71,8 +80,8 @@ router.post('/add', async (req, res) => {
   }
 });
 
-// Get all members
-router.get('/all', async (req, res) => {
+// Get all members (Admin Only)
+router.get('/all', auth, adminOnly, async (req, res) => {
   try {
     const members = await Member.find().sort({ joiningDate: -1 });
     res.json(members);
@@ -81,8 +90,8 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// Update member
-router.put('/update/:id', async (req, res) => {
+// Update member (Admin Only)
+router.put('/update/:id', auth, adminOnly, async (req, res) => {
   try {
     const updatedMember = await Member.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updatedMember);
@@ -91,8 +100,8 @@ router.put('/update/:id', async (req, res) => {
   }
 });
 
-// Delete member
-router.delete('/delete/:id', async (req, res) => {
+// Delete member (Admin Only)
+router.delete('/delete/:id', auth, adminOnly, async (req, res) => {
   try {
     await Member.findByIdAndDelete(req.params.id);
     res.json({ message: 'Member deleted successfully' });
@@ -104,14 +113,14 @@ router.delete('/delete/:id', async (req, res) => {
 const { jsPDF } = require("jspdf");
 const { default: autoTable } = require("jspdf-autotable");
 
-// Renew membership
-router.post('/renew/:id', async (req, res) => {
+// Renew membership (Admin Only or Token Protected)
+router.post('/renew/:id', auth, adminOnly, async (req, res) => {
   try {
     const { durationMonths, amountPaid } = req.body;
     const member = await Member.findById(req.params.id);
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
-    // Extend from current expiry if not already expired, else from now
+    // Extension logic...
     const now = new Date();
     const currentExpiry = new Date(member.expiryDate);
     const startDate = currentExpiry > now ? currentExpiry : now;
@@ -201,5 +210,7 @@ router.post('/renew/:id', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+module.exports = router;
 
 module.exports = router;
