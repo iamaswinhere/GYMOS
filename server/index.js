@@ -8,11 +8,18 @@ dotenv.config();
 const app = express();
 
 // Middleware
-const allowedOrigin = process.env.CORS_ORIGIN || '*';
+const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['*'];
 app.use(cors({
-  origin: allowedOrigin,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 app.use(express.json());
 
@@ -22,7 +29,13 @@ const { Server } = require('socket.io');
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigin,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
