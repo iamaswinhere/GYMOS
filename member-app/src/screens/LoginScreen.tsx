@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }: any) => {
       await login(mobileNumber);
       navigation.replace('Dashboard');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Something went wrong');
+      Alert.alert('No member found', error.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
