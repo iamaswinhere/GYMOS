@@ -13,17 +13,51 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
-    plan: 'monthly'
+    plan: 'Monthly GYM',
+    hasPT: false
   });
 
   const plans = [
-    { id: 'monthly', name: 'Elite Monthly', price: '₹2,999', features: ['Full Gym Access', '1 Trainer Session'] },
-    { id: 'quarterly', name: 'Pro Quarterly', price: '₹7,999', features: ['Full Gym Access', '5 Trainer Sessions', 'Diet Plan'] },
-    { id: 'yearly', name: 'Titan Yearly', price: '₹24,999', features: ['24/7 VIP Access', 'Personal Trainer', 'Nutritionist', 'Spa Access'] }
+    { id: 'Monthly GYM', name: 'Regular Protocol', price: '₹1,000', features: ['Full Gym Access', 'Strength Training'] },
+    { id: 'Student', name: 'Student Protocol', price: '₹899', features: ['Valid Student ID Required', 'Full Gym Access'] }
   ];
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
+
+  const handleSubmit = async () => {
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${BASE_URL}/leads/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.mobile,
+          plan: formData.plan,
+          hasPT: formData.hasPT
+        })
+      });
+
+      if (response.ok) {
+        // WhatsApp Notification to Admin
+        const adminNumber = '919567950284';
+        const message = encodeURIComponent(
+          `🚀 *GYMOS NEW LEAD ALERT!*\n\n` +
+          `👤 *Name:* ${formData.name}\n` +
+          `📱 *Phone:* ${formData.mobile}\n` +
+          `🏋️ *Plan:* ${formData.plan}\n` +
+          `⚡ *PT:* ${formData.hasPT ? 'Yes (+₹2000)' : 'No'}\n\n` +
+          `_Customer waiting for enrollment confirmation._`
+        );
+        window.open(`https://wa.me/${adminNumber}?text=${message}`, '_blank');
+        handleNext();
+      }
+    } catch (error) {
+       console.error("Lead submission failed", error);
+       alert("Submission failed. Please try again.");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -41,7 +75,7 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="w-full max-w-2xl bg-[#0D0D0D] border border-white/5 rounded-[32px] md:rounded-[40px] p-6 md:p-12 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-2xl bg-[#0D0D0D] border border-white/5 rounded-[32px] md:rounded-[40px] p-4 md:p-10 shadow-2xl relative overflow-hidden"
       >
         <button 
           onClick={onClose}
@@ -50,7 +84,7 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
           <X size={24} />
         </button>
 
-        <div className="p-6 md:p-12">
+        <div className="p-4 md:p-8">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div 
@@ -58,7 +92,7 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
+                className="space-y-6 md:space-y-8"
               >
                 <div>
                   <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center mb-6">
@@ -110,11 +144,11 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-8"
+                className="space-y-6 md:space-y-8"
               >
                 <div>
                   <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Select Your Tier</h2>
-                  <p className="text-gray-500 font-medium">Choose the protocol that fits your goals.</p>
+                  <p className="text-gray-500 font-medium text-sm">Choose the protocol that fits your life.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -122,22 +156,41 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
                     <div 
                       key={plan.id}
                       onClick={() => setFormData({...formData, plan: plan.id})}
-                      className={`p-6 rounded-3xl border transition-all cursor-pointer flex justify-between items-center ${formData.plan === plan.id ? 'bg-primary/20 border-primary/50' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                      className={`p-5 rounded-3xl border transition-all cursor-pointer flex justify-between items-center ${formData.plan === plan.id ? 'bg-primary/20 border-primary/50' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
                     >
-                      <div>
-                        <h4 className="text-white font-black uppercase tracking-tight">{plan.name}</h4>
-                        <p className="text-primary font-bold text-sm">{plan.price}</p>
+                      <div className="flex-1">
+                        <h4 className="text-white font-black uppercase tracking-tight text-sm md:text-base">{plan.name}</h4>
+                        <p className="text-primary font-bold text-xs">{plan.price}</p>
                       </div>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.plan === plan.id ? 'border-primary bg-primary' : 'border-white/20'}`}>
+                      <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center ${formData.plan === plan.id ? 'border-primary bg-primary' : 'border-white/20'}`}>
                         {formData.plan === plan.id && <Check size={14} className="text-black stroke-[4]" />}
                       </div>
                     </div>
                   ))}
                 </div>
 
+                {/* PT Support Toggle */}
+                <div 
+                  onClick={() => setFormData({...formData, hasPT: !formData.hasPT})}
+                  className={`p-6 rounded-[32px] border transition-all cursor-pointer flex justify-between items-center ${formData.hasPT ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                >
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${formData.hasPT ? 'bg-primary text-black' : 'bg-white/5 text-gray-500'}`}>
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-white font-black uppercase tracking-tight text-sm">Personal Trainer</h4>
+                            <p className="text-gray-500 font-bold text-[10px] uppercase tracking-wider">+ ₹2,000 / Month</p>
+                        </div>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full relative transition-colors ${formData.hasPT ? 'bg-primary' : 'bg-white/10'}`}>
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${formData.hasPT ? 'left-7' : 'left-1'}`}></div>
+                    </div>
+                </div>
+
                 <div className="flex gap-4">
-                  <button onClick={handleBack} className="flex-1 h-14 border border-white/10 text-white font-bold uppercase tracking-widest rounded-2xl hover:bg-white/5 transition-all">Back</button>
-                  <button onClick={handleNext} className="flex-[2] h-14 bg-primary text-black font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all">Review Protocol</button>
+                  <button onClick={handleBack} className="flex-1 h-16 border border-white/10 text-white font-bold uppercase tracking-widest rounded-2xl hover:bg-white/5 transition-all text-sm">Back</button>
+                  <button onClick={handleSubmit} className="flex-[2] h-16 bg-primary text-black font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-[0_0_30px_rgba(255,196,0,0.2)] text-sm">Commit Protocol</button>
                 </div>
               </motion.div>
             )}
@@ -147,34 +200,35 @@ const JoinNowModal = ({ isOpen, onClose }: JoinNowModalProps) => {
                 key="step3"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center space-y-10"
+                className="text-center space-y-10 py-6"
               >
                 <div className="w-24 h-24 bg-primary/20 rounded-[2.5rem] flex items-center justify-center mx-auto relative">
-                  <Sparkles className="text-primary" size={48} />
+                  <Check className="text-primary" size={48} strokeWidth={4} />
                   <div className="absolute inset-0 bg-primary blur-[40px] opacity-20 animate-pulse"></div>
                 </div>
 
                 <div className="space-y-4">
-                  <h2 className="text-4xl font-black text-white tracking-tighter uppercase">Protocol Ready</h2>
-                  <p className="text-gray-400 font-medium px-8">We've reserved your spot, <span className="text-white font-black">{formData.name}</span>. Visit our front desk to complete the biometric enrollment.</p>
+                  <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Protocol <span className="text-primary italic">Saved</span></h2>
+                  <p className="text-gray-400 font-medium px-4 text-sm md:text-base leading-relaxed">Admin notified, <span className="text-white font-black italic">{formData.name}</span>. Check your WhatsApp for the final confirmation link.</p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 text-left space-y-4">
+                <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 text-left space-y-4 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors"></div>
                   <div className="flex justify-between items-center pb-4 border-b border-white/5">
-                    <span className="text-gray-500 font-bold uppercase text-xs tracking-widest">Selected Tier</span>
-                    <span className="text-primary font-black uppercase tracking-tighter">{plans.find(p => p.id === formData.plan)?.name}</span>
+                    <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Selected Protocol</span>
+                    <span className="text-primary font-black uppercase tracking-tighter">{plans.find(p => p.id === formData.plan)?.name}{formData.hasPT ? ' + PT' : ''}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500 font-bold uppercase text-xs tracking-widest">Reference ID</span>
-                    <span className="text-white font-black tracking-tighter font-mono">#{Math.random().toString(36).substr(2, 8).toUpperCase()}</span>
+                    <span className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Lead Hash</span>
+                    <span className="text-white font-black tracking-tighter font-mono">#{Math.random().toString(36).substr(2, 6).toUpperCase()}</span>
                   </div>
                 </div>
 
                 <button 
                   onClick={onClose}
-                  className="w-full h-16 bg-white text-black font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all"
+                  className="w-full h-16 bg-white text-black font-black uppercase tracking-widest rounded-3xl hover:scale-[1.02] transition-all shadow-xl"
                 >
-                  Acknowledge & Close
+                  Return to Matrix
                 </button>
               </motion.div>
             )}

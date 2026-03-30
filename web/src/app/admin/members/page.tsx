@@ -33,7 +33,7 @@ export default function MembersPage() {
 
   // Derived amount based on plan and PT
   const calculateAmount = (plan: string, hasPT: boolean) => {
-    let base = plan === 'Student' ? 800 : 1000;
+    let base = plan === 'Student' ? 899 : 1000;
     return hasPT ? base + 2000 : base;
   };
 
@@ -158,7 +158,7 @@ export default function MembersPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Member <span className="text-primary italic">Directory</span></h1>
-          <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Standard: ₹1000 | Student: ₹800 | PT: +₹2000</p>
+          <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Regular: ₹1000 | Student: ₹899 | PT: +₹2000</p>
         </div>
         <button onClick={() => handleOpenModal()} className="bg-primary text-black font-black px-6 py-3 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(255,196,0,0.2)]">
           <Plus size={20} strokeWidth={3} /> ADD MEMBER

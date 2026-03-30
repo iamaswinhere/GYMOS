@@ -204,6 +204,16 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
+    socket.on('leadUpdate', (data: { type: string, lead: any }) => {
+      setState(prev => ({
+        ...prev,
+        notifications: [
+          `🔥 New Lead: ${data.lead.name} interested in ${data.lead.plan}${data.lead.hasPT ? ' + PT' : ''}`,
+          ...prev.notifications
+        ].slice(0, 5)
+      }));
+    });
+
     socket.on('paymentUpdate', (data: { memberName: string, amount: number, plan: string, memberId: string, date: string }) => {
       setState(prev => {
         // Just update the revenue, notifications, and add to the payments feed

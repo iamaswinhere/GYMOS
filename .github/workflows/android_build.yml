@@ -1,0 +1,46 @@
+name: Build & Host APK (Android)
+
+on:
+  push:
+    branches: [ main ] # or your main branch name
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: member-app/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: member-app
+        run: npm install
+
+      - name: Build Android APK (Local)
+        working-directory: member-app
+        run: npx expo export --platform android # This is a simpler export for PWA/Web part too
+
+      - name: Use EAS CLI for Local Build
+        working-directory: member-app
+        run: |
+          npm install -g eas-cli
+          npx eas build --platform android --profile development --local --non-interactive
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gymos-android-app
+          path: member-app/*.apk
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: member-app/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

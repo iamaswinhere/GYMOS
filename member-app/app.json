@@ -24,7 +24,17 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "pwa": {
+        "name": "GYMOS Members",
+        "shortName": "GYMOS",
+        "description": "Premium Gym Management & Member Experience",
+        "themeColor": "#000000",
+        "backgroundColor": "#000000",
+        "display": "standalone",
+        "orientation": "portrait"
+      }
     }
   }
 }
