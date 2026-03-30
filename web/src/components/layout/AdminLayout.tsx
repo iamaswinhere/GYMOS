@@ -38,49 +38,49 @@ export default function AdminLayout({
     return <div className="min-h-screen bg-black" />; // Loading state
   }
 
-  if (pathname === '/admin/login') {
-    return <>{children}</>;
-  }
-
   return (
     <DashboardProvider>
-      <div className="min-h-screen bg-black flex overflow-hidden">
-        {/* Sidebar for Desktop */}
-        <div className="hidden lg:block w-64 shrink-0 h-screen">
-          <Sidebar isOpen={true} onClose={() => {}} isMobile={false} />
-        </div>
+      {pathname === '/admin/login' ? (
+        children
+      ) : (
+        <div className="min-h-screen bg-black flex overflow-hidden">
+          {/* Sidebar for Desktop */}
+          <div className="hidden lg:block w-64 shrink-0 h-screen">
+            <Sidebar isOpen={true} onClose={() => {}} isMobile={false} />
+          </div>
 
-        {/* Sidebar for Mobile */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsSidebarOpen(false)}
-                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] lg:hidden"
-              />
-              <motion.div 
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed left-0 top-0 bottom-0 w-[280px] z-[70] lg:hidden"
-              >
-                <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+          {/* Sidebar for Mobile */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] lg:hidden"
+                />
+                <motion.div 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '-100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="fixed left-0 top-0 bottom-0 w-[280px] z-[70] lg:hidden"
+                >
+                  <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} isMobile={true} />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
-        <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          <Header onMenuClick={() => setIsSidebarOpen(true)} />
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-black custom-scrollbar">
-            {children}
-          </main>
+          <div className="flex-1 flex flex-col h-screen overflow-hidden">
+            <Header onMenuClick={() => setIsSidebarOpen(true)} />
+            <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-black custom-scrollbar">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      )}
     </DashboardProvider>
   );
 }
