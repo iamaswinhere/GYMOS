@@ -14,6 +14,8 @@ import {
 import { AuthProvider } from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
+import StartupLoader from './src/components/StartupLoader';
+
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {

@@ -9,17 +9,15 @@ import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import AttendanceScannerScreen from '../screens/AttendanceScannerScreen';
 
+import StartupLoader from '../components/StartupLoader';
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { member, isLoading } = useContext(AuthContext);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: COLORS.black, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
-    );
+    return <StartupLoader />;
   }
 
   return (
