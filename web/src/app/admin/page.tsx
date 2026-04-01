@@ -30,12 +30,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 // Helper for relative time
-const getRelativeTime = (dateString: string) => {
+const getRelativeTime = (dateString: any) => {
   if (!dateString) return 'Pending';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Recently'; // Handle invalid dates
+  
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   
+  if (diffInSeconds < 0) return 'Just now'; // Handle future dates
   if (diffInSeconds < 60) return 'Just now';
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -354,13 +357,15 @@ const Dashboard = () => {
               ) : (
                 payments.slice(0, 4).map((payment) => (
                   <div key={payment.id} className="flex items-center gap-4 group cursor-default">
-                    <div className="w-10 h-10 bg-[#121212] rounded-xl flex items-center justify-center border border-white/5 text-gray-500 group-hover:text-primary group-hover:border-primary/50 transition-all font-black text-xs uppercase">{payment.name.charAt(0)}</div>
+                    <div className="w-10 h-10 bg-[#121212] rounded-xl flex items-center justify-center border border-white/5 text-gray-500 group-hover:text-primary group-hover:border-primary/50 transition-all font-black text-xs uppercase">
+                        {payment.name?.charAt(0) || '?'}
+                    </div>
                     <div className="flex-1">
-                      <p className="text-sm font-black text-white group-hover:text-primary transition-colors">{payment.name}</p>
-                      <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">{payment.plan} • {getRelativeTime(payment.createdAt || payment.date)}</p>
+                      <p className="text-sm font-black text-white group-hover:text-primary transition-colors">{payment.name || 'Member'}</p>
+                      <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">{payment.plan || 'Plan'} • {getRelativeTime(payment.createdAt || payment.date)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black text-white italic">₹{payment.amount.toLocaleString()}</p>
+                      <p className="text-xs font-black text-white italic">₹{(payment.amount || 0).toLocaleString()}</p>
                       <p className="text-[8px] text-emerald-500/70 font-black uppercase tracking-widest italic">Success</p>
                     </div>
                   </div>

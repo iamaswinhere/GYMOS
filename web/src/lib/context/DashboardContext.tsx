@@ -144,16 +144,16 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ]);
 
       const [membersData, eventsData, paymentsData, settingsData] = await Promise.all([
-        membersRes.json(),
-        eventsRes.json(),
-        paymentsRes.json(),
-        settingsRes.json()
+        membersRes.ok ? membersRes.json() : [],
+        eventsRes.ok ? eventsRes.json() : [],
+        paymentsRes.ok ? paymentsRes.json() : [],
+        settingsRes.ok ? settingsRes.json() : null
       ]);
 
-      const members = (membersData || []).map((m: any) => ({
+      const members = (Array.isArray(membersData) ? membersData : []).map((m: any) => ({
         id: m._id,
-        name: m.name,
-        number: m.mobileNumber,
+        name: m.name || 'Anonymous',
+        number: m.mobileNumber || '',
         plan: m.membershipPlan?.name || 'Standard',
         status: m.membershipStatus || 'active',
         expiry: m.expiryDate ? new Date(m.expiryDate).toISOString().split('T')[0] : '',
@@ -162,27 +162,28 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         createdAt: m.createdAt
       }));
 
-      const totalRevenue = (paymentsData || []).reduce((sum: number, p: any) => sum + p.amount, 0);
+      const validPaymentsData = Array.isArray(paymentsData) ? paymentsData : [];
+      const totalRevenue = validPaymentsData.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
       
-      const activityFromPayments = (paymentsData || []).map((p: any) => ({
+      const activityFromPayments = validPaymentsData.map((p: any) => ({
         id: p._id,
         name: p.memberId?.name || 'Member',
         number: '',
-        plan: p.planName,
+        plan: p.planName || 'Signup',
         status: 'active' as const,
         expiry: '',
-        amount: p.amount,
-        date: p.paymentDate,
-        createdAt: p.paymentDate
+        amount: p.amount || 0,
+        date: p.paymentDate || p.createdAt,
+        createdAt: p.paymentDate || p.createdAt
       }));
 
-      const events = (eventsData || []).map((e: any) => ({
+      const events = (Array.isArray(eventsData) ? eventsData : []).map((e: any) => ({
         id: e._id,
-        name: e.name,
+        name: e.name || 'Untitled Event',
         date: e.date,
-        location: e.location,
+        location: e.location || '',
         imageUrl: e.imageUrl,
-        status: e.status,
+        status: e.status || 'upcoming',
       }));
 
       const activeCount = members.filter((m: Member) => m.status === 'active').length;

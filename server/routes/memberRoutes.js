@@ -212,5 +212,3 @@ router.post('/renew/:id', auth, adminOnly, async (req, res) => {
 });
 
 module.exports = router;
-
-module.exports = router;
