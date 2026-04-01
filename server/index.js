@@ -60,9 +60,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database Connection
+// Database Connection + Auto-seed admin
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB Atlas'))
+  .then(async () => {
+    console.log('Connected to MongoDB Atlas');
+    try {
+      const Admin = require('./models/Admin');
+      const existing = await Admin.findOne({ role: 'admin' });
+      if (!existing) {
+        const admin = new Admin({
+          username: 'gymos_admin',
+          password: 'GymOS@2024!',
+          name: 'GYMOS Admin',
+          role: 'admin'
+        });
+        await admin.save();
+        console.log('✅ Admin auto-seeded: gymos_admin / GymOS@2024!');
+      } else {
+        console.log('Admin already exists in DB:', existing.username);
+      }
+    } catch (seedErr) {
+      console.error('Admin seed failed:', seedErr.message);
+    }
+  })
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 
 // Routes
