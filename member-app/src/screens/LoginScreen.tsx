@@ -32,7 +32,11 @@ const LoginScreen = ({ navigation }: any) => {
       await login(mobileNumber);
       navigation.replace('Dashboard');
     } catch (error: any) {
-      Alert.alert('No member found', error.message || 'Something went wrong');
+      if (error.message.includes('No member found')) {
+        Alert.alert('No member found', 'No member found in this mobile number');
+      } else {
+        Alert.alert('Login failed', error.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
