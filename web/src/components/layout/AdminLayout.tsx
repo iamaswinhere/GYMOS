@@ -17,8 +17,8 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    const session = localStorage.getItem('gymos_admin_session');
-    const isLoggedIn = session === 'active';
+    const token = localStorage.getItem('gymos_admin_token');
+    const isLoggedIn = !!token;
     
     if (!isLoggedIn && pathname !== '/admin/login') {
       router.push('/admin/login');
