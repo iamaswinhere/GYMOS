@@ -7,23 +7,28 @@ import {
   TouchableOpacity, 
   KeyboardAvoidingView, 
   Platform,
-  ImageBackground,
   StatusBar,
   ActivityIndicator,
-  Alert
+  Modal,
+  Pressable
 } from 'react-native';
-import { Dumbbell, ArrowRight } from 'lucide-react-native';
+import { Dumbbell, ArrowRight, AlertCircle, X } from 'lucide-react-native';
 import { COLORS, SIZES } from '../constants/theme';
 import { AuthContext } from '../context/AuthContext';
 
 const LoginScreen = ({ navigation }: any) => {
   const [mobileNumber, setMobileNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState({ visible: false, title: '', message: '' });
   const { login } = useContext(AuthContext);
+
+  const showError = (title: string, message: string) => {
+    setErrorModal({ visible: true, title, message });
+  };
 
   const handleLogin = async () => {
     if (!mobileNumber || mobileNumber.length !== 10) {
-      Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
+      showError('Invalid Input', 'Please enter a valid 10-digit mobile number');
       return;
     }
 
@@ -33,9 +38,9 @@ const LoginScreen = ({ navigation }: any) => {
       navigation.replace('Dashboard');
     } catch (error: any) {
       if (error.message.includes('No member found') || error.message.includes('No user found')) {
-        Alert.alert('No user found', 'No member found in this mobile number');
+        showError('No user found', 'No member found in this mobile number');
       } else {
-        Alert.alert('Login failed', error.message || 'Something went wrong. Please try again.');
+        showError('Login failed', error.message || 'Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -45,6 +50,36 @@ const LoginScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+      
+      {/* Premium Error Modal */}
+      <Modal
+        visible={errorModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setErrorModal({ ...errorModal, visible: false })}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setErrorModal({ ...errorModal, visible: false })}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <AlertCircle color={COLORS.error} size={40} strokeWidth={2.5} />
+            </View>
+            
+            <Text style={styles.modalTitle}>{errorModal.title}</Text>
+            <Text style={styles.modalMessage}>{errorModal.message}</Text>
+            
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setErrorModal({ ...errorModal, visible: false })}
+            >
+              <Text style={styles.modalButtonText}>TRY AGAIN</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Dumbbell color={COLORS.primary} size={64} strokeWidth={3} />
@@ -181,6 +216,60 @@ const styles = StyleSheet.create({
     color: '#555',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 82, 82, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.white,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#aaa',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  modalButton: {
+    backgroundColor: '#333',
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
 });
 
