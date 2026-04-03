@@ -259,6 +259,17 @@ const DashboardScreen = ({ navigation }: any) => {
         </ScrollView>
 
       </ScrollView>
+
+      {/* Floating Action Scanner Button */}
+      <TouchableOpacity 
+        style={styles.fab}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('Scanner')}
+      >
+        <View style={styles.fabIconContainer}>
+            <QrCode color="#000" size={28} />
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -292,6 +303,26 @@ const styles = StyleSheet.create({
   eventTitle: { color: COLORS.white, fontSize: 18, fontWeight: '800', marginBottom: 12 },
   eventFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   eventTime: { color: '#666', fontSize: 12, fontWeight: '600' },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: '#ffc400', // Primary color
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#ffc400',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  fabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
 });
 
 export default DashboardScreen;

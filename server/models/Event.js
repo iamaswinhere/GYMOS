@@ -9,4 +9,7 @@ const eventSchema = new mongoose.Schema({
   createdBy: { type: String, default: 'Admin' }
 }, { timestamps: true });
 
+// TTL Index: Deletes the event 24 hours (86400 seconds) after the 'date' value
+eventSchema.index({ date: 1 }, { expireAfterSeconds: 86400 });
+
 module.exports = mongoose.model('Event', eventSchema);

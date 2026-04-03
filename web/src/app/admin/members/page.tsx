@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, 
   Search, 
@@ -10,7 +10,9 @@ import {
   X,
   UserCheck,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  Upload
 } from "lucide-react";
 import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +23,65 @@ export default function MembersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // CSV Export
+  const handleExport = () => {
+    const header = ['Name', 'Phone', 'Plan', 'Status', 'Amount', 'Expiry'];
+    const rows = members.map(m => [
+        `"${m.name.replace(/"/g, '""')}"`, 
+        `"${m.number}"`, 
+        `"${m.plan}"`, 
+        `"${m.status}"`, 
+        m.amount, 
+        `"${m.expiry}"`
+    ]);
+    const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `gymos_members_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // CSV Import
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim() !== '');
+        if (lines.length <= 1) return alert('File is empty or invalid.');
+        
+        let successCount = 0;
+        // Skip header
+        for (let i = 1; i < lines.length; i++) {
+            // Regex to handle commas inside quotes (basic)
+            const values = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)?.map(v => v.replace(/^"|"$/g, '')) || [];
+            
+            if (values.length >= 2) {
+                await addMember({
+                    name: values[0] || 'Unknown',
+                    number: values[1] || '00000000',
+                    plan: values[2] || 'Monthly GYM',
+                    status: (values[3]?.toLowerCase() as any) || 'active',
+                    amount: parseInt(values[4]) || 1000,
+                    expiry: values[5] ? new Date(values[5]).toISOString().split('T')[0] : calculateExpiry(),
+                    date: new Date().toISOString().split('T')[0]
+                });
+                successCount++;
+            }
+        }
+        alert(`Import completed! Added ${successCount} members.`);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -160,9 +221,24 @@ export default function MembersPage() {
           <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Member <span className="text-primary italic">Directory</span></h1>
           <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Regular: ₹1000 | Student: ₹899 | PT: +₹2000</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="bg-primary text-black font-black px-6 py-3 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(255,196,0,0.2)]">
-          <Plus size={20} strokeWidth={3} /> ADD MEMBER
-        </button>
+        <div className="flex gap-2">
+          <input 
+            type="file" 
+            accept=".csv" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleImport} 
+          />
+          <button onClick={() => fileInputRef.current?.click()} className="bg-white/5 border border-white/10 text-white font-black p-3 rounded-2xl hover:bg-white/10 transition-all shadow-[0_0_20px_rgba(255,255,255,0.05)]" title="Import CSV">
+            <Upload size={20} strokeWidth={2} />
+          </button>
+          <button onClick={handleExport} className="bg-white/5 border border-white/10 text-white font-black p-3 rounded-2xl hover:bg-white/10 transition-all shadow-[0_0_20px_rgba(255,255,255,0.05)]" title="Export CSV">
+            <Download size={20} strokeWidth={2} />
+          </button>
+          <button onClick={() => handleOpenModal()} className="bg-primary text-black font-black px-6 py-3 rounded-2xl flex items-center gap-2 hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(255,196,0,0.2)] ml-2">
+            <Plus size={20} strokeWidth={3} /> <span className="hidden sm:inline">ADD MEMBER</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white/5 border border-white/5 rounded-2xl p-6 flex flex-wrap gap-6 items-center">

@@ -1,197 +1,212 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
-import { COLORS, SIZES } from '../constants/theme';
-import { ArrowLeft } from 'lucide-react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { AuthContext } from '../context/AuthContext';
 import { API_URL } from '../constants/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AttendanceScannerScreen = ({ navigation }: any) => {
+export default function AttendanceScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const { member, token } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<any>();
+  const { member: user } = React.useContext(AuthContext);
 
   useEffect(() => {
-    const getBarCodeScannerPermissions = async () => {
+    const getCameraPermissions = async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     };
 
-    getBarCodeScannerPermissions();
+    getCameraPermissions();
   }, []);
 
-  const handleBarCodeScanned = async ({ type, data }: any) => {
+  const handleBarCodeScanned = async ({ type, data }: { type: string, data: string }) => {
     setScanned(true);
     
+    // Validate that it's a GYMOS check-in QR code
+    if (!data.startsWith('gymos://checkin?token=')) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Invalid QR Code", "Please scan the official GYMOS check-in QR code at the front desk.", [
+            { text: "Try Again", onPress: () => setScanned(false) }
+        ]);
+        return;
+    }
+
+    const token = data.replace('gymos://checkin?token=', '');
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
     try {
+      const jwtToken = await AsyncStorage.getItem('userToken');
       const response = await fetch(`${API_URL}/api/attendance/mark`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${jwtToken}`
         },
-        body: JSON.stringify({ memberId: member._id })
+        body: JSON.stringify({
+          memberId: user?._id || user?.id,
+          token: token
+        })
       });
 
-      const resData = await response.json();
+      const result = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Attendance marked successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert("Check-in Successful!", "Welcome to GYMOS. Have a great workout!", [
+            { text: "Awesome", onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert('Attendance Failed', resData.message || 'Could not mark attendance.', [
-          { text: 'OK', onPress: () => setScanned(false) }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Check-in Failed", result.message || "Could not check in.", [
+            { text: "OK", onPress: () => setScanned(false) }
         ]);
       }
-
     } catch (error) {
-      Alert.alert('Error', 'Network error. Please try again.', [
-        { text: 'OK', onPress: () => setScanned(false) }
+      console.error(error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Network Error", "Check your connection and try again.", [
+        { text: "Retry", onPress: () => setScanned(false) }
       ]);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (hasPermission === null) {
-    return <View style={styles.container}><Text style={styles.text}>Requesting for camera permission...</Text></View>;
+    return <View style={styles.container}><ActivityIndicator color="#ffc400" size="large" /></View>;
   }
   if (hasPermission === false) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.text}>No access to camera</Text>
-        <TouchableOpacity style={styles.backBtnWrapper} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.container}>
+            <MaterialCommunityIcons name="camera-off" size={64} color="#555" />
+            <Text style={styles.text}>No access to camera</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <Text style={styles.backButtonText}>Go Back</Text>
+            </TouchableOpacity>
+        </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <ArrowLeft color={COLORS.white} size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>SCAN GYM QR</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <View style={styles.container}>
+      <CameraView
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
+        }}
+        style={StyleSheet.absoluteFillObject}
+      />
       
-      <View style={styles.cameraContainer}>
-        <CameraView
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.overlay}>
-          <View style={styles.scanBox}>
-            <View style={styles.cornerTopLeft} />
-            <View style={styles.cornerTopRight} />
-            <View style={styles.cornerBottomLeft} />
-            <View style={styles.cornerBottomRight} />
-            <View style={styles.scanLine} />
-          </View>
+      {/* Overlay to guide user */}
+      <View style={styles.overlay}>
+        <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+                <MaterialCommunityIcons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>SCAN TO ENTER</Text>
+            <View style={{width: 44}} />
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Point the camera at the GYMOS QR code at the front desk to mark your daily attendance.
-        </Text>
+        <View style={styles.scannerBox}>
+            <View style={[styles.corner, styles.topLeft]} />
+            <View style={[styles.corner, styles.topRight]} />
+            <View style={[styles.corner, styles.bottomLeft]} />
+            <View style={[styles.corner, styles.bottomRight]} />
+        </View>
+        
+        <Text style={styles.instruction}>Point camera at the front desk Kiosk</Text>
+        
+        {loading && (
+             <View style={styles.loadingContainer}>
+                <ActivityIndicator color="#ffc400" size="large" />
+                <Text style={styles.loadingText}>Verifying Pass...</Text>
+             </View>
+        )}
       </View>
-    </SafeAreaView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.black,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#000',
     alignItems: 'center',
-    padding: SIZES.padding,
-    paddingTop: 20
-  },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: COLORS.darkGray,
-    alignItems: 'center', justifyContent: 'center'
-  },
-  headerTitle: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1
-  },
-  text: {
-    color: COLORS.white,
-    textAlign: 'center',
-    marginTop: 100,
-    fontSize: 16
-  },
-  cameraContainer: {
-    flex: 1,
-    overflow: 'hidden',
-    marginTop: 20,
-    borderRadius: 30,
-    marginHorizontal: SIZES.padding,
+    justifyContent: 'center',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
   },
-  scanBox: {
-    width: 250,
-    height: 250,
+  header: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingTop: 60,
+      paddingHorizontal: 20,
+  },
+  headerTitle: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '900',
+      letterSpacing: 2,
+  },
+  closeButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+  },
+  scannerBox: {
+    width: 280,
+    height: 280,
+    marginTop: '30%',
     backgroundColor: 'transparent',
     position: 'relative',
-    overflow: 'hidden'
   },
-  scanLine: {
+  corner: {
     position: 'absolute',
-    width: '100%',
-    height: 2,
-    backgroundColor: COLORS.primary,
-    top: '50%', // In a real app we'd animate this, but for now we set a static middle marker or top
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 5,
+    width: 40,
+    height: 40,
+    borderColor: '#ffc400',
   },
-  cornerTopLeft: { position: 'absolute', top: 0, left: 0, width: 20, height: 20, borderTopWidth: 4, borderLeftWidth: 4, borderColor: COLORS.primary, borderTopLeftRadius: 15 },
-  cornerTopRight: { position: 'absolute', top: 0, right: 0, width: 20, height: 20, borderTopWidth: 4, borderRightWidth: 4, borderColor: COLORS.primary, borderTopRightRadius: 15 },
-  cornerBottomLeft: { position: 'absolute', bottom: 0, left: 0, width: 20, height: 20, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: COLORS.primary, borderBottomLeftRadius: 15 },
-  cornerBottomRight: { position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderBottomWidth: 4, borderRightWidth: 4, borderColor: COLORS.primary, borderBottomRightRadius: 15 },
-  footer: {
-    padding: SIZES.padding,
-    paddingBottom: 40,
-    alignItems: 'center'
+  topLeft: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4, borderTopLeftRadius: 16 },
+  topRight: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4, borderTopRightRadius: 16 },
+  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4, borderBottomLeftRadius: 16 },
+  bottomRight: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4, borderBottomRightRadius: 16 },
+  instruction: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '600',
+      marginTop: 40,
+      letterSpacing: 1,
   },
-  footerText: {
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 22,
-    fontSize: 14
+  loadingContainer: {
+      position: 'absolute',
+      bottom: 100,
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      paddingHorizontal: 30,
+      paddingVertical: 15,
+      borderRadius: 20,
   },
-  backBtnWrapper: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: COLORS.primary,
-    borderRadius: 10,
-    marginHorizontal: 50,
-    alignItems: 'center'
+  loadingText: {
+      color: '#ffc400',
+      marginTop: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1,
   },
-  backBtnText: {
-    color: COLORS.black,
-    fontWeight: 'bold'
-  }
+  text: { color: '#fff', marginTop: 20, fontSize: 16 },
+  backButton: { marginTop: 30, backgroundColor: '#ffc400', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  backButtonText: { color: '#000', fontWeight: 'bold' }
 });
-
-export default AttendanceScannerScreen;

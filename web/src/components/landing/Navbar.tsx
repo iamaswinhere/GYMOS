@@ -12,9 +12,15 @@ const Navbar = () => {
     { name: 'Equipments', href: '#equipments' },
   ];
 
+  const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(50); // Light haptic tap
+    }
+  };
+
   return (
     <>
-      <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center bg-black/50 backdrop-blur-xl border-b border-white/5 top-0">
+      <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center bg-black/50 backdrop-blur-xl border-b border-white/5 top-0 transition-all">
         <div className="flex items-center gap-3">
           <img 
             src="/logo.png" 
@@ -27,15 +33,18 @@ const Navbar = () => {
         {/* Desktop Links */}
         <div className="hidden md:flex gap-8 items-center font-bold">
           {navLinks.map((link) => (
-            <a key={link.name} href={link.href} className="text-gray-400 hover:text-primary transition-all text-sm uppercase tracking-widest">{link.name}</a>
+            <a key={link.name} href={link.href} className="text-gray-400 hover:text-primary transition-all text-sm uppercase tracking-widest hover:scale-105 active:scale-95 inline-block">{link.name}</a>
           ))}
-          <a href="#contact" className="btn-primary py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(255,196,0,0.3)] hover:scale-105 transition-all text-xs uppercase tracking-widest text-center">Contact</a>
+          <a onClick={triggerHaptic} href="#contact" className="btn-primary py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(255,196,0,0.3)] hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest text-center">Contact</a>
         </div>
 
         {/* Mobile Toggle */}
         <button 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden text-white p-2"
+          onClick={() => {
+            triggerHaptic();
+            setIsMenuOpen(!isMenuOpen);
+          }}
+          className="md:hidden text-white p-2 hover:scale-110 active:scale-90 transition-transform"
         >
           {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>

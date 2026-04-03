@@ -239,12 +239,20 @@ const Dashboard = () => {
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase transition-all italic">GYM <span className="text-primary">DASHBOARD</span></h1>
           <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Pricing: Standard ₹1000 | Student ₹800</p>
         </div>
-        <button 
-          onClick={() => setShowAddMember(true)}
-          className="bg-primary text-black px-6 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(255,196,0,0.3)] group uppercase tracking-widest text-xs"
-        >
-          <Plus size={18} strokeWidth={4} className="group-hover:rotate-90 transition-transform" /> Quick Signup
-        </button>
+        <div className="flex gap-2">
+            <button 
+                onClick={() => router.push('/admin/kiosk')}
+                className="bg-white/5 border border-white/10 text-white px-6 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-white/10 active:scale-[0.98] transition-all group uppercase tracking-widest text-xs"
+            >
+                <Zap size={18} strokeWidth={4} className="group-hover:text-primary transition-colors animate-pulse" /> Kiosk
+            </button>
+            <button 
+                onClick={() => setShowAddMember(true)}
+                className="bg-primary text-black px-6 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(255,196,0,0.3)] group uppercase tracking-widest text-xs"
+            >
+                <Plus size={18} strokeWidth={4} className="group-hover:rotate-90 transition-transform" /> Quick Signup
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

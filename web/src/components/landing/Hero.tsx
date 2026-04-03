@@ -14,6 +14,12 @@ const Hero = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.8]);
 
+  const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+
   return (
     <section id="hero" ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20">
       {/* Parallax Background Decor */}
@@ -32,9 +38,9 @@ const Hero = () => {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center lg:text-left"
+          className="text-center lg:text-left max-w-full overflow-hidden"
         >
-          <h1 className="text-[12vw] md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter uppercase italic">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-none tracking-tighter uppercase italic">
             UNLEASH <br className="hidden md:block" />
             YOUR <br />
             <span className="text-primary text-glow">INNER BEAST</span>
@@ -44,14 +50,20 @@ const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
             <button 
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              className="btn-primary py-4 px-10 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-[0_10px_40px_rgba(255,196,0,0.3)]"
+              onClick={() => {
+                triggerHaptic();
+                document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="btn-primary py-4 px-10 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-[0_10px_40px_rgba(255,196,0,0.3)] hover:scale-105 active:scale-95 transition-all"
             >
               Get Started
             </button>
             <button 
-              onClick={() => document.getElementById('equipments')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-10 py-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all text-white font-bold text-xs uppercase tracking-[0.2em]"
+              onClick={() => {
+                triggerHaptic();
+                document.getElementById('equipments')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-10 py-4 rounded-2xl border border-white/10 hover:bg-white/5 transition-all text-white font-bold text-xs uppercase tracking-[0.2em] hover:scale-105 active:scale-95"
             >
               Explore Gym
             </button>

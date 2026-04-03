@@ -4,14 +4,30 @@ const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const { auth } = require('../middleware/auth');
 
+// Helper to generate the current hour's secure token
+const getExpectedToken = () => {
+    const now = new Date();
+    // Match the frontend's token generation: YYYY-MM-DD-HH
+    const dateString = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+    return Buffer.from(`gymos_secure_${dateString}`).toString('base64');
+};
+
 // Mark attendance
 router.post('/mark', auth, async (req, res) => {
   try {
-    const { memberId } = req.body;
+    const { memberId, token } = req.body;
     
     // Security: A member can only mark attendance for themselves unless they are an admin
     if (req.userRole !== 'admin' && req.user !== memberId) {
       return res.status(403).json({ message: 'Unauthorized: You can only mark attendance for yourself' });
+    }
+
+    // Kiosk Security: If not an admin, a valid QR scan token is required
+    if (req.userRole !== 'admin') {
+      const expectedToken = getExpectedToken();
+      if (token !== expectedToken) {
+          return res.status(403).json({ message: 'Invalid or expired check-in QR code.' });
+      }
     }
 
     // Check if member exists
