@@ -27,8 +27,11 @@ main {
 }
 
 body {
+  --background: #000000;
+  --foreground: #ffffff;
   color: var(--foreground);
   background: var(--background);
+  background-color: #000000;
   font-family: var(--font-poppins), sans-serif;
 }
 
