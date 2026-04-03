@@ -19,8 +19,12 @@ const Navbar = () => {
   return (
     <>
       <nav className="fixed w-full z-50 px-6 py-4 flex justify-between items-center bg-black/50 backdrop-blur-xl border-b border-white/5 top-0">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="text-primary w-8 h-8" />
+        <div className="flex items-center gap-3">
+          <img 
+            src="/logo.png" 
+            alt="GYMOS Logo" 
+            className="w-10 h-10 object-contain rounded-lg shadow-[0_0_15px_rgba(255,196,0,0.2)]" 
+          />
           <span className="text-xl md:text-2xl font-black tracking-tighter text-white uppercase italic">GYM<span className="text-primary">OS</span></span>
         </div>
 
