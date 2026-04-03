@@ -13,30 +13,37 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Mobile number is required' });
     }
 
-    const member = await Member.findOne({ mobileNumber });
-    if (!member) {
-      return res.status(404).json({ message: 'No member found in this mobile number' });
+    // Normalize: strip all non-digits and take last 10 digits
+    const normalizedInput = mobileNumber.replace(/\D/g, '').slice(-10);
+
+    if (normalizedInput.length < 10) {
+      return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
     }
 
-    // Check membership status and expiry
+    // Search all members and match against normalized stored number
+    const allMembers = await Member.find({});
+    const member = allMembers.find(m => {
+      const storedNormalized = m.mobileNumber.replace(/\D/g, '').slice(-10);
+      return storedNormalized === normalizedInput;
+    });
+
+    if (!member) {
+      return res.status(404).json({ message: 'No member found with this mobile number' });
+    }
+
+    // Check membership status and expiry - allow login but flag status
     const today = new Date();
     const expiryDate = new Date(member.expiryDate);
-
-    if (member.membershipStatus !== 'active' || expiryDate < today) {
-        return res.status(403).json({ 
-            message: 'Your membership is inactive or expired. Please renew to continue.',
-            member: member // Optionally send member info if you want to show details even when expired
-        });
-    }
+    const isExpired = member.membershipStatus !== 'active' || expiryDate < today;
 
     // CREATE JWT FOR MEMBER
     const token = jwt.sign(
       { id: member._id, role: 'member' },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' } // Member app usually stays logged in longer
+      { expiresIn: '30d' }
     );
 
-    res.json({ token, member });
+    res.json({ token, member, isExpired });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
