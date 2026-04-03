@@ -23,6 +23,7 @@ router.post('/login', async (req, res) => {
     // Search all members and match against normalized stored number
     const allMembers = await Member.find({});
     const member = allMembers.find(m => {
+      if (!m.mobileNumber) return false;
       const storedNormalized = m.mobileNumber.replace(/\D/g, '').slice(-10);
       return storedNormalized === normalizedInput;
     });

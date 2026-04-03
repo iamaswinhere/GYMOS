@@ -9,6 +9,15 @@ dotenv.config();
 
 const app = express();
 
+if (!process.env.MONGODB_URI) {
+  console.error("CRITICAL ERROR: MONGODB_URI is not defined in Environment Variables!");
+}
+
+if (!process.env.JWT_SECRET) {
+  console.warn("WARNING: JWT_SECRET is missing! Falling back to generic secret for recovery.");
+  process.env.JWT_SECRET = "GYMOS_DEFAULT_EMERGENCY_SECRET_123";
+}
+
 // Security Middleware
 app.use(helmet());
 
@@ -22,13 +31,17 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Middleware
-const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://localhost:5001', 'http://localhost:5173'];
+const corsEnv = process.env.CORS_ORIGIN || '*';
+const allowedOrigins = corsEnv.split(',');
+const isGlobalAllowed = allowedOrigins.includes('*');
+
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || isGlobalAllowed || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // Return false to block, but don't pass an Error which causes a 500
+      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -44,10 +57,10 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      if (!origin || isGlobalAllowed || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE']
