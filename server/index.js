@@ -37,7 +37,7 @@ const isGlobalAllowed = allowedOrigins.includes('*');
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || isGlobalAllowed || allowedOrigins.includes(origin)) {
+    if (!origin || isGlobalAllowed || allowedOrigins.includes(origin) || (origin && origin.endsWith('vercel.app'))) {
       callback(null, true);
     } else {
       // Return false to block, but don't pass an Error which causes a 500
@@ -57,7 +57,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      if (!origin || isGlobalAllowed || allowedOrigins.includes(origin)) {
+      if (!origin || isGlobalAllowed || allowedOrigins.includes(origin) || (origin && origin.endsWith('vercel.app'))) {
         callback(null, true);
       } else {
         callback(null, false);
