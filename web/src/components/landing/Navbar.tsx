@@ -1,18 +1,15 @@
 "use client";
 import React, { useState } from 'react';
-import { Dumbbell, Menu, X } from 'lucide-react';
-import JoinNowModal from './JoinNowModal';
+import { Menu, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const Navbar = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
     { name: 'Home', href: '#hero' },
     { name: 'About', href: '#about' },
     { name: 'Equipments', href: '#equipments' },
-    { name: 'Contact', href: '#contact' },
   ];
 
   return (
@@ -32,7 +29,7 @@ const Navbar = () => {
           {navLinks.map((link) => (
             <a key={link.name} href={link.href} className="text-gray-400 hover:text-primary transition-all text-sm uppercase tracking-widest">{link.name}</a>
           ))}
-          <a href="#contact" className="btn-primary py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(255,196,0,0.3)] hover:scale-105 transition-all text-xs uppercase tracking-widest text-center">Join Now</a>
+          <a href="#contact" className="btn-primary py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(255,196,0,0.3)] hover:scale-105 transition-all text-xs uppercase tracking-widest text-center">Contact</a>
         </div>
 
         {/* Mobile Toggle */}
@@ -44,7 +41,6 @@ const Navbar = () => {
         </button>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -70,14 +66,12 @@ const Navbar = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className="btn-primary py-5 rounded-2xl text-lg shadow-[0_0_30px_rgba(255,196,0,0.4)] mt-4 text-center"
               >
-                Join GYMOS Elite
+                Reach GYMOS
               </a>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <JoinNowModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );
 };
