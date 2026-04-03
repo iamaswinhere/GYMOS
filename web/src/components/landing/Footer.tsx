@@ -7,8 +7,8 @@ const Footer = () => {
         <footer className="bg-black border-t border-white/5 pt-20 pb-10">
             <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                 <div className="md:col-span-2">
-                    <div className="flex items-center gap-2 mb-6">
-                        <Dumbbell className="text-primary w-8 h-8" />
+                    <div className="flex items-center gap-3 mb-6">
+                        <img src="/logo.png" alt="GYMOS Logo" className="w-10 h-10 object-contain rounded-lg shadow-[0_0_15px_rgba(255,196,0,0.2)]" />
                         <span className="text-2xl font-black tracking-tighter text-white">GYM<span className="text-primary">OS</span></span>
                     </div>
                     <p className="text-gray-500 max-w-sm leading-relaxed mb-8">

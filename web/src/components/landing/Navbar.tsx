@@ -12,7 +12,6 @@ const Navbar = () => {
     { name: 'Home', href: '#hero' },
     { name: 'About', href: '#about' },
     { name: 'Equipments', href: '#equipments' },
-    { name: 'Get App', href: '/apps' },
     { name: 'Contact', href: '#contact' },
   ];
 
@@ -33,7 +32,6 @@ const Navbar = () => {
           {navLinks.map((link) => (
             <a key={link.name} href={link.href} className="text-gray-400 hover:text-primary transition-all text-sm uppercase tracking-widest">{link.name}</a>
           ))}
-          <a href="/member/login" className="px-4 py-2 text-gray-400 hover:text-white transition-all text-sm uppercase tracking-widest border border-white/10 rounded-xl">Member Login</a>
           <a href="#contact" className="btn-primary py-3 px-8 rounded-xl shadow-[0_0_20px_rgba(255,196,0,0.3)] hover:scale-105 transition-all text-xs uppercase tracking-widest text-center">Join Now</a>
         </div>
 
@@ -67,12 +65,6 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="h-px bg-white/10 my-4" />
-              <a 
-                href="/member/login" 
-                className="text-xl text-primary"
-              >
-                Member Login
-              </a>
               <a 
                 href="#contact" 
                 onClick={() => setIsMenuOpen(false)}
