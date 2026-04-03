@@ -1,15 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const { auth } = require('../middleware/auth');
 
-// Helper to generate the current hour's secure token
-const getExpectedToken = () => {
+// Helper to generate the current hour's secure tokens
+const getExpectedTokens = () => {
     const now = new Date();
     // Match the frontend's token generation: YYYY-MM-DD-HH
     const dateString = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
-    return Buffer.from(`gymos_secure_${dateString}`).toString('base64');
+    const qrToken = Buffer.from(`gymos_secure_${dateString}`).toString('base64');
+    
+    // Generate a 6-digit numeric string for manual entry
+    const hash = crypto.createHash('sha256').update('gymos_pin_' + dateString).digest('hex');
+    const shortCode = parseInt(hash.substring(0, 8), 16).toString().substring(0, 6).padStart(6, '0');
+    
+    return { qrToken, shortCode };
 };
 
 // Mark attendance
@@ -22,11 +29,11 @@ router.post('/mark', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized: You can only mark attendance for yourself' });
     }
 
-    // Kiosk Security: If not an admin, a valid QR scan token is required
+    // Kiosk Security: If not an admin, a valid QR scan token OR short code is required
     if (req.userRole !== 'admin') {
-      const expectedToken = getExpectedToken();
-      if (token !== expectedToken) {
-          return res.status(403).json({ message: 'Invalid or expired check-in QR code.' });
+      const expected = getExpectedTokens();
+      if (token !== expected.qrToken && token !== expected.shortCode) {
+          return res.status(403).json({ message: 'Invalid or expired check-in token.' });
       }
     }
 

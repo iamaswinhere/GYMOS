@@ -7,21 +7,35 @@ import { useRouter } from 'next/navigation';
 
 export default function KioskPage() {
   const [token, setToken] = useState("");
+  const [pinCode, setPinCode] = useState("");
   const [currentTime, setCurrentTime] = useState("");
   const router = useRouter();
 
   // In a real production environment, this token would be fetched from the backend daily or hourly.
-  // For now, we will generate a time-based token on the client.
+  // For now, we will generate time-based tokens on the client.
   useEffect(() => {
-    const generateToken = () => {
+    const generateTokens = async () => {
       const now = new Date();
       // Token changes every hour: YYYY-MM-DD-HH
       const dateString = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
       setToken(btoa(`gymos_secure_${dateString}`));
+
+      // Generate the alternative 6-digit PIN code
+      const encoder = new TextEncoder();
+      const data = encoder.encode('gymos_pin_' + dateString);
+      try {
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const shortCode = parseInt(hashHex.substring(0, 8), 16).toString().substring(0, 6).padStart(6, '0');
+        setPinCode(shortCode);
+      } catch (err) {
+        setPinCode("000000");
+      }
     };
 
-    generateToken();
-    const interval = setInterval(generateToken, 60000); // Check every minute if the hour changed
+    generateTokens();
+    const interval = setInterval(generateTokens, 60000); // Check every minute if the hour changed
 
     return () => clearInterval(interval);
   }, []);
@@ -96,6 +110,16 @@ export default function KioskPage() {
                 <ShieldCheck className="text-green-500" size={18} />
                 Secure Auto-Rotating Token
             </p>
+
+            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl flex flex-col items-center mt-4 w-full">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Alternative Check-in Code</p>
+                {pinCode ? (
+                  <p className="text-3xl md:text-5xl font-black text-white tracking-[0.5em]">{pinCode}</p>
+                ) : (
+                  <Zap size={32} className="text-primary animate-pulse" />
+                )}
+            </div>
+
             <button 
                 onClick={() => router.push('/admin')} 
                 className="text-[10px] uppercase font-black tracking-widest text-gray-500 hover:text-white transition-colors mt-8"

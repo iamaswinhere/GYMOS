@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +12,8 @@ export default function AttendanceScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+  const [manualCode, setManualCode] = useState('');
   const navigation = useNavigation<any>();
   const { member: user } = React.useContext(AuthContext);
 
@@ -78,6 +80,42 @@ export default function AttendanceScannerScreen() {
     }
   };
 
+  const handleManualCheckIn = async () => {
+    if (manualCode.length !== 6) {
+        Alert.alert("Invalid Code", "Please enter a 6-digit code.");
+        return;
+    }
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    try {
+        const jwtToken = await AsyncStorage.getItem('userToken');
+        const response = await fetch(`${API_URL}/api/attendance/mark`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${jwtToken}`
+            },
+            body: JSON.stringify({
+                memberId: user?._id || user?.id,
+                token: manualCode
+            })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert("Check-in Successful!", "Welcome to GYMOS", [{ text: "Awesome", onPress: () => navigation.goBack() }]);
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert("Check-in Failed", result.message || "Invalid Code", [{ text: "OK" }]);
+        }
+    } catch(err) {
+        Alert.alert("Network Error", "Could not connect.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
   if (hasPermission === null) {
     return <View style={styles.container}><ActivityIndicator color="#ffc400" size="large" /></View>;
   }
@@ -122,11 +160,40 @@ export default function AttendanceScannerScreen() {
         
         <Text style={styles.instruction}>Point camera at the front desk Kiosk</Text>
         
+        <TouchableOpacity style={styles.manualButton} onPress={() => setShowManual(true)}>
+            <Text style={styles.manualButtonText}>Enter Code Manually instead</Text>
+        </TouchableOpacity>
+        
         {loading && (
              <View style={styles.loadingContainer}>
                 <ActivityIndicator color="#ffc400" size="large" />
                 <Text style={styles.loadingText}>Verifying Pass...</Text>
              </View>
+        )}
+
+        {showManual && (
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.manualOverlay}>
+                <View style={styles.manualCard}>
+                    <Text style={styles.manualTitle}>Enter Kiosk PIN</Text>
+                    <TextInput 
+                        style={styles.manualInput}
+                        value={manualCode}
+                        onChangeText={setManualCode}
+                        placeholder="000000"
+                        placeholderTextColor="#555"
+                        maxLength={6}
+                        keyboardType="number-pad"
+                    />
+                    <View style={styles.manualActions}>
+                        <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setShowManual(false)}>
+                            <Text style={styles.cancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.btn, styles.btnSubmit]} onPress={handleManualCheckIn}>
+                            <Text style={styles.submitText}>Submit</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
         )}
       </View>
     </View>
@@ -208,5 +275,17 @@ const styles = StyleSheet.create({
   },
   text: { color: '#fff', marginTop: 20, fontSize: 16 },
   backButton: { marginTop: 30, backgroundColor: '#ffc400', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-  backButtonText: { color: '#000', fontWeight: 'bold' }
+  backButtonText: { color: '#000', fontWeight: 'bold' },
+  manualButton: { marginTop: 30, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20 },
+  manualButtonText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  manualOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  manualCard: { backgroundColor: '#111', padding: 30, borderRadius: 20, width: '80%', alignItems: 'center', borderWidth: 1, borderColor: '#ffc400' },
+  manualTitle: { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 20 },
+  manualInput: { backgroundColor: '#000', color: '#ffc400', fontSize: 32, fontWeight: '900', letterSpacing: 10, width: '100%', textAlign: 'center', borderRadius: 10, padding: 15, marginBottom: 20, borderWidth: 1, borderColor: '#333' },
+  manualActions: { flexDirection: 'row', gap: 15, width: '100%' },
+  btn: { flex: 1, paddingVertical: 15, borderRadius: 10, alignItems: 'center' },
+  btnCancel: { backgroundColor: '#333' },
+  btnSubmit: { backgroundColor: '#ffc400' },
+  cancelText: { color: '#fff', fontWeight: 'bold' },
+  submitText: { color: '#000', fontWeight: 'bold' }
 });
