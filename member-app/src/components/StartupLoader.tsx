@@ -5,77 +5,138 @@ import {
   StyleSheet, 
   Animated, 
   Dimensions, 
-  StatusBar 
+  StatusBar,
+  Image,
+  Easing
 } from 'react-native';
-import { Dumbbell } from 'lucide-react-native';
-import { COLORS, SIZES } from '../constants/theme';
+import { COLORS } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const StartupLoader = () => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Animation values
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.5)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(20)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const progressWidth = useRef(new Animated.Value(0)).current;
+  const dotsOpacity1 = useRef(new Animated.Value(0.3)).current;
+  const dotsOpacity2 = useRef(new Animated.Value(0.3)).current;
+  const dotsOpacity3 = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    // Initial fade in
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
+    // Phase 1: Logo appears with dramatic scale-up
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1, duration: 600, useNativeDriver: true,
+        }),
+        Animated.spring(logoScale, {
+          toValue: 1, tension: 60, friction: 8, useNativeDriver: true,
+        }),
+        Animated.timing(glowOpacity, {
+          toValue: 1, duration: 800, useNativeDriver: true,
+        }),
+      ]),
+      // Phase 2: Text slides up
+      Animated.parallel([
+        Animated.timing(textOpacity, {
+          toValue: 1, duration: 500, useNativeDriver: true,
+        }),
+        Animated.timing(textTranslateY, {
+          toValue: 0, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        }),
+      ]),
+      // Phase 3: Tagline fades in
+      Animated.timing(taglineOpacity, {
+        toValue: 1, duration: 400, useNativeDriver: true,
+      }),
+      // Phase 4: Progress bar
+      Animated.timing(progressWidth, {
+        toValue: width * 0.55, duration: 2000, easing: Easing.out(Easing.cubic), useNativeDriver: false,
+      }),
+    ]).start();
 
-    // Pulse animation for the logo
+    // Pulsing glow loop
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(glowOpacity, { toValue: 0.4, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glowOpacity, { toValue: 1, duration: 1200, useNativeDriver: true }),
       ])
     ).start();
 
-    // Progress bar animation
-    Animated.timing(progressAnim, {
-      toValue: width * 0.6,
-      duration: 3000,
-      useNativeDriver: false,
-    }).start();
+    // Animated loading dots
+    const dotDelay = 300;
+    const animDot = (dot: Animated.Value, delay: number) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+          Animated.delay(dotDelay * 2),
+        ])
+      ).start();
+    };
+    setTimeout(() => {
+      animDot(dotsOpacity1, 0);
+      animDot(dotsOpacity2, dotDelay);
+      animDot(dotsOpacity3, dotDelay * 2);
+    }, 1800);
+
   }, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        <Animated.View style={{ transform: [{ scale: pulseAnim }], alignItems: 'center' }}>
-          <View style={styles.logoCircle}>
-            <Dumbbell color={COLORS.primary} size={48} strokeWidth={3} />
-          </View>
-          <Text style={styles.logoText}>
-            GYM<Text style={{ color: COLORS.primary }}>OS</Text>
-          </Text>
-          <Text style={styles.tagline}>ELITE MANAGEMENT</Text>
-        </Animated.View>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-        <View style={styles.loaderContainer}>
-          <View style={styles.progressBarBg}>
-            <Animated.View 
-              style={[
-                styles.progressBarFill, 
-                { width: progressAnim }
-              ]} 
-            />
-          </View>
-          <Text style={styles.loadingText}>INITIALIZING SYSTEM...</Text>
+      {/* Background radial glow */}
+      <Animated.View style={[styles.bgGlow, { opacity: glowOpacity }]} />
+
+      {/* Logo Section */}
+      <Animated.View style={[
+        styles.logoSection,
+        { opacity: logoOpacity, transform: [{ scale: logoScale }] }
+      ]}>
+        <View style={styles.logoIconWrapper}>
+          <Image 
+            source={require('../../assets/icon.png')} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
       </Animated.View>
+
+      {/* Brand Text */}
+      <Animated.View style={[
+        styles.brandSection,
+        { opacity: textOpacity, transform: [{ translateY: textTranslateY }] }
+      ]}>
+        <Text style={styles.brandText}>
+          GYM<Text style={styles.brandHighlight}>OS</Text>
+        </Text>
+      </Animated.View>
+
+      {/* Tagline */}
+      <Animated.Text style={[styles.tagline, { opacity: taglineOpacity }]}>
+        ELITE GYM MANAGEMENT
+      </Animated.Text>
+
+      {/* Progress Bar */}
+      <Animated.View style={[styles.progressContainer, { opacity: textOpacity }]}>
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+        </View>
+
+        {/* Animated Loading Dots */}
+        <View style={styles.dotsRow}>
+          <Animated.View style={[styles.dot, { opacity: dotsOpacity1 }]} />
+          <Animated.View style={[styles.dot, { opacity: dotsOpacity2 }]} />
+          <Animated.View style={[styles.dot, { opacity: dotsOpacity3 }]} />
+        </View>
+      </Animated.View>
+
     </View>
   );
 };
@@ -83,72 +144,89 @@ const StartupLoader = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.black,
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  content: {
-    alignItems: 'center',
-    width: '100%',
+  bgGlow: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(255, 196, 0, 0.07)',
+    top: height / 2 - 250,
   },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255, 196, 0, 0.1)',
-    justifyContent: 'center',
+  logoSection: {
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 196, 0, 0.2)',
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  logoIconWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 30,
+    overflow: 'hidden',
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.6,
+    shadowRadius: 30,
+    elevation: 15,
   },
-  logoText: {
-    fontSize: 48,
+  logoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 30,
+  },
+  brandSection: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  brandText: {
+    fontSize: 52,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -2,
   },
-  tagline: {
-    fontSize: 12,
+  brandHighlight: {
     color: COLORS.primary,
-    fontWeight: '800',
-    letterSpacing: 4,
-    marginTop: 5,
-    opacity: 0.8,
   },
-  loaderContainer: {
-    marginTop: 80,
+  tagline: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255, 196, 0, 0.7)',
+    letterSpacing: 4,
+    marginBottom: 70,
+  },
+  progressContainer: {
     alignItems: 'center',
     width: '100%',
   },
-  progressBarBg: {
-    width: width * 0.6,
-    height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  progressTrack: {
+    width: width * 0.55,
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 2,
     overflow: 'hidden',
+    marginBottom: 20,
   },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
-    backgroundColor: COLORS.primary,
     borderRadius: 2,
+    backgroundColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 5,
   },
-  loadingText: {
-    marginTop: 15,
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.primary,
   },
 });
 
