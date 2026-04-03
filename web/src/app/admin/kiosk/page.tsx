@@ -15,9 +15,13 @@ export default function KioskPage() {
   // For now, we will generate time-based tokens on the client.
   useEffect(() => {
     const generateTokens = async () => {
+      // Current time
       const now = new Date();
-      // Token changes every hour: YYYY-MM-DD-HH
-      const dateString = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+      // IST Offset (UTC+5:30)
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const istDate = new Date(now.getTime() + istOffset);
+      
+      const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
       setToken(btoa(`gymos_secure_${dateString}`));
 
       // Generate the alternative 6-digit PIN code

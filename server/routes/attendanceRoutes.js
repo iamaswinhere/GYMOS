@@ -5,11 +5,15 @@ const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const { auth } = require('../middleware/auth');
 
-// Helper to generate the current hour's secure tokens
 const getExpectedTokens = () => {
+    // Current UTC time
     const now = new Date();
-    // Match the frontend's token generation: YYYY-MM-DD-HH
-    const dateString = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+    // Offset for IST (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    
+    // Calculate date string using IST values
+    const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
     const qrToken = Buffer.from(`gymos_secure_${dateString}`).toString('base64');
     
     // Generate a 6-digit numeric string for manual entry
