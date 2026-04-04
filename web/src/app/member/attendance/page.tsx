@@ -55,6 +55,9 @@ export default function MemberAttendance() {
       await scannerRef.current.stop();
     }
     
+    // Extract token from gymos://checkin?token=...
+    const extractedToken = data.includes('token=') ? data.split('token=')[1] : null;
+
     try {
       const response = await fetch(`${API_URL}/attendance/mark`, {
         method: 'POST',
@@ -62,7 +65,10 @@ export default function MemberAttendance() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ memberId: member?._id })
+        body: JSON.stringify({ 
+           memberId: member?._id,
+           token: extractedToken
+        })
       });
 
       const resData = await response.json();
