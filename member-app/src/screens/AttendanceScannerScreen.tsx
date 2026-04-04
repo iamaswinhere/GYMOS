@@ -14,6 +14,8 @@ export default function AttendanceScannerScreen() {
   const [loading, setLoading] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
   const navigation = useNavigation<any>();
   const { member: user } = React.useContext(AuthContext);
 
@@ -40,6 +42,7 @@ export default function AttendanceScannerScreen() {
 
     const token = data.replace('gymos://checkin?token=', '');
     setLoading(true);
+    setStatus('idle');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     try {
@@ -60,21 +63,21 @@ export default function AttendanceScannerScreen() {
 
       if (response.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Check-in Successful!", "Welcome to GYMOS. Have a great workout!", [
-            { text: "Awesome", onPress: () => navigation.goBack() }
-        ]);
+        setStatus('success');
+        setMessage("Welcome to GYMOS.\nHave a great workout!");
+        setTimeout(() => {
+            navigation.goBack();
+        }, 2500);
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert("Check-in Failed", result.message || "Could not check in.", [
-            { text: "OK", onPress: () => setScanned(false) }
-        ]);
+        setStatus('error');
+        setMessage(result.message || "Could not check in.");
       }
     } catch (error) {
       console.error(error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert("Network Error", "Check your connection and try again.", [
-        { text: "Retry", onPress: () => setScanned(false) }
-      ]);
+      setStatus('error');
+      setMessage("Check your network connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -104,13 +107,20 @@ export default function AttendanceScannerScreen() {
         const result = await response.json();
         if (response.ok) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert("Check-in Successful!", "Welcome to GYMOS", [{ text: "Awesome", onPress: () => navigation.goBack() }]);
+            setShowManual(false);
+            setStatus('success');
+            setMessage("Welcome to GYMOS");
+            setTimeout(() => {
+                navigation.goBack();
+            }, 2500);
         } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert("Check-in Failed", result.message || "Invalid Code", [{ text: "OK" }]);
+            setStatus('error');
+            setMessage(result.message || "Invalid Code");
         }
     } catch(err) {
-        Alert.alert("Network Error", "Could not connect.");
+        setStatus('error');
+        setMessage("Could not connect to the server.");
     } finally {
         setLoading(false);
     }
@@ -194,6 +204,34 @@ export default function AttendanceScannerScreen() {
                     </View>
                 </View>
             </KeyboardAvoidingView>
+        )}
+
+        {/* Elite Status Overlay */}
+        {status !== 'idle' && (
+            <View style={styles.statusOverlay}>
+                <View style={status === 'success' ? styles.statusGlowBox : styles.statusErrorGlowBox}>
+                    <MaterialCommunityIcons 
+                        name={status === 'success' ? "check-decagram" : "close-circle"} 
+                        size={80} 
+                        color={status === 'success' ? "#ffc400" : "#ff3333"} 
+                    />
+                    <Text style={styles.statusTitle}>
+                        {status === 'success' ? 'ACCESS GRANTED' : 'ACCESS DENIED'}
+                    </Text>
+                    <Text style={styles.statusMessage}>{message}</Text>
+                    
+                    {status === 'error' && (
+                         <TouchableOpacity 
+                            style={styles.retryBtn} 
+                            onPress={() => {
+                                setStatus('idle');
+                                setScanned(false);
+                            }}>
+                            <Text style={styles.retryBtnText}>TRY AGAIN</Text>
+                         </TouchableOpacity>
+                    )}
+                </View>
+            </View>
         )}
       </View>
     </View>
@@ -287,5 +325,12 @@ const styles = StyleSheet.create({
   btnCancel: { backgroundColor: '#333' },
   btnSubmit: { backgroundColor: '#ffc400' },
   cancelText: { color: '#fff', fontWeight: 'bold' },
-  submitText: { color: '#000', fontWeight: 'bold' }
+  submitText: { color: '#000', fontWeight: 'bold' },
+  statusOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  statusGlowBox: { alignItems: 'center', padding: 40, borderRadius: 30, backgroundColor: '#0a0a0a', borderWidth: 2, borderColor: '#ffc400', shadowColor: '#ffc400', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 30 },
+  statusErrorGlowBox: { alignItems: 'center', padding: 40, borderRadius: 30, backgroundColor: '#1a0505', borderWidth: 2, borderColor: '#ff3333', shadowColor: '#ff3333', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 30 },
+  statusTitle: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 4, marginTop: 20, textAlign: 'center' },
+  statusMessage: { color: '#aaa', fontSize: 14, textAlign: 'center', marginTop: 10, lineHeight: 20 },
+  retryBtn: { marginTop: 30, backgroundColor: '#333', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10 },
+  retryBtnText: { color: '#fff', fontWeight: 'bold', letterSpacing: 2 }
 });
