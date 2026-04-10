@@ -12,14 +12,16 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iamaswinhere.gymos"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.iamaswinhere.gymos"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -36,6 +38,11 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "67227f19-3ecc-40d6-bac3-e269f572dbba"
+      }
+    }
   }
 }

@@ -18,11 +18,12 @@ import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MembersPage() {
-  const { members, addMember, updateMember, deleteMember, isLoading } = useDashboard();
+  const { members, addMember, updateMember, renewMember, deleteMember, isLoading } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [processingRenew, setProcessingRenew] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // CSV Export
@@ -150,13 +151,16 @@ export default function MembersPage() {
     setIsModalOpen(true);
   };
 
-  const handleRenew = (member: Member) => {
-    const nextExpiry = new Date(new Date(member.expiry).setMonth(new Date(member.expiry).getMonth() + 1)).toISOString().split('T')[0];
-    updateMember(member.id, {
-      expiry: nextExpiry,
-      status: 'active'
-    });
-    alert(`${member.name}'s membership extended by 1 month!`);
+  const handleRenew = async (member: Member) => {
+    try {
+      setProcessingRenew(member.id);
+      await renewMember(member.id, 1);
+      alert(`${member.name}'s membership extended and receipt generated!`);
+    } catch (err: any) {
+      alert(err.message || "Failed to renew member");
+    } finally {
+      setProcessingRenew(null);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -306,8 +310,17 @@ export default function MembersPage() {
                       <td className="px-6 py-5 text-xs text-gray-500 font-bold uppercase">{new Date(member.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                       <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleRenew(member)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-green-500 hover:bg-green-500/10 transition-all" title="Extend 1 Month">
-                            <RefreshCw size={18} />
+                          <button 
+                            onClick={() => handleRenew(member)} 
+                            disabled={!!processingRenew}
+                            className={`p-2.5 bg-white/5 rounded-xl text-gray-500 transition-all ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
+                            title="Extend 1 Month"
+                          >
+                            {processingRenew === member.id ? (
+                                <RefreshCw size={18} className="animate-spin text-green-500" />
+                            ) : (
+                                <RefreshCw size={18} />
+                            )}
                           </button>
                           <button onClick={() => handleOpenModal(member)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Profile">
                             <Edit2 size={18} />
@@ -367,8 +380,17 @@ export default function MembersPage() {
                   <p className="text-[10px] font-black text-gray-400 uppercase">{new Date(member.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleRenew(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-green-500 hover:bg-green-500/10 transition-all border border-white/5" title="Renew">
-                    <RefreshCw size={18} />
+                  <button 
+                    onClick={() => handleRenew(member)} 
+                    disabled={!!processingRenew}
+                    className={`p-3 bg-white/5 rounded-xl text-gray-400 transition-all border border-white/5 ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
+                    title="Renew"
+                  >
+                    {processingRenew === member.id ? (
+                         <RefreshCw size={18} className="animate-spin text-green-500" />
+                    ) : (
+                        <RefreshCw size={18} />
+                    )}
                   </button>
                   <button onClick={() => handleOpenModal(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/10 transition-all border border-white/5" title="Edit">
                     <Edit2 size={18} />

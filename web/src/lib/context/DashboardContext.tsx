@@ -66,6 +66,7 @@ interface DashboardContextType extends DashboardState {
   logout: () => void;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
+  renewMember: (id: string, months: number) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
   addEvent: (event: Omit<GymEvent, 'id'>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -404,6 +405,37 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const renewMember = async (id: string, months: number = 1) => {
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/members/renew/${id}`, {
+        method: 'POST',
+        body: JSON.stringify({ durationMonths: months })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Auto-download PDF Receipt
+        if (data.pdf) {
+            const link = document.createElement('a');
+            link.href = data.pdf;
+            link.download = `GYMOS_Receipt_${data.member?.name || 'Member'}_${Date.now()}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        await fetchAllData();
+      } else {
+        const err = await res.json();
+        throw new Error(err.message || "Renewal failed");
+      }
+    } catch (error) {
+      console.error("Renewal failed:", error);
+      throw error;
+    }
+  };
+
   const deleteMember = async (id: string) => {
     try {
       await authenticatedFetch(`${BASE_URL}/members/delete/${id}`, {
@@ -514,6 +546,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       logout,
       addMember, 
       updateMember,
+      renewMember,
       deleteMember,
       addEvent,
       deleteEvent,
