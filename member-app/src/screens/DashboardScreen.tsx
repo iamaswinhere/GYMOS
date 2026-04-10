@@ -140,24 +140,29 @@ const DashboardScreen = ({ navigation }: any) => {
     const openUpi = async () => {
       try {
         if (Platform.OS === 'web') {
-          // On web, we just try to open and provide a fallback
           window.location.href = upiUrl;
           confirmPayment();
         } else {
-          const supported = await Linking.canOpenURL(upiUrl);
-          if (supported) {
-            await Linking.openURL(upiUrl);
-            confirmPayment();
-          } else {
-            Alert.alert('Error', 'No UPI app found. Please copy UPI ID: ' + upiId);
-          }
+          // Bypass canOpenURL as it is unreliable for custom schemes on newer OS versions
+          // Directly attempt to open the UPI intent
+          Linking.openURL(upiUrl).then(() => {
+              confirmPayment();
+          }).catch(() => {
+              Alert.alert(
+                'UPI App Not Found', 
+                `We couldn't launch a UPI app automatically.\n\nPlease manual pay to: ${upiId}`,
+                [{ text: 'OK', onPress: confirmPayment }]
+              );
+          });
         }
       } catch (e) {
         if (Platform.OS === 'web') {
             alert('If UPI app didn\'t open, please use UPI ID: ' + upiId);
             confirmPayment();
         } else {
-            Alert.alert('Error', 'Could not open UPI app');
+            Alert.alert('Error', 'Could not open UPI app. Please use ID: ' + upiId, [
+                { text: 'OK', onPress: confirmPayment }
+            ]);
         }
       }
     };

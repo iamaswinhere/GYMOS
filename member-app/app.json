@@ -21,7 +21,19 @@
         "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.iamaswinhere.gymos"
+      "package": "com.iamaswinhere.gymos",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "upi"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
