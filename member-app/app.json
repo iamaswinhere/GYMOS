@@ -2,6 +2,7 @@
   "expo": {
     "name": "GYMOS Members",
     "slug": "member-app",
+    "scheme": "gymos-member",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.iamaswinhere.gymos"
+      "bundleIdentifier": "com.iamaswinhere.gymos",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -49,7 +53,13 @@
       }
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow GYMOS to access your camera to scan check-in QR codes."
+        }
+      ]
     ],
     "extra": {
       "eas": {
