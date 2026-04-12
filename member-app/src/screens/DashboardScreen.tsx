@@ -98,7 +98,7 @@ const DashboardScreen = ({ navigation }: any) => {
   const isExpired = daysLeft <= 0;
 
   const handleRenewUPI = async () => {
-    const upiId = 'aswin005achu-1@oksbi';
+    const upiId = 'aswin005achu@oksbi';
     const amount = member?.membershipPlan?.price || 1000;
     const upiUrl = `upi://pay?pa=${upiId}&pn=GYMOS&am=${amount}&cu=INR&tn=Membership Renewal - ${member.name}`;
     
