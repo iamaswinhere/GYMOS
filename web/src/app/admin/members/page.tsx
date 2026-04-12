@@ -18,7 +18,7 @@ import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MembersPage() {
-  const { members, addMember, updateMember, renewMember, deleteMember, isLoading, refreshData } = useDashboard();
+  const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -58,15 +58,13 @@ export default function MembersPage() {
         const text = event.target?.result as string;
         const lines = text.split('\n').filter(line => line.trim() !== '');
         if (lines.length <= 1) return alert('File is empty or invalid.');
-        
-        let successCount = 0;
-        // Skip header
+
+        // Parse all rows into an array — no API calls inside the loop
+        const batch: Omit<Member, 'id'>[] = [];
         for (let i = 1; i < lines.length; i++) {
-            // Regex to handle commas inside quotes (basic)
             const values = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)?.map(v => v.replace(/^"|"$/g, '')) || [];
-            
             if (values.length >= 2) {
-                await addMember({
+                batch.push({
                     name: values[0] || 'Unknown',
                     number: values[1] || '00000000',
                     plan: values[2] || 'Monthly GYM',
@@ -74,12 +72,20 @@ export default function MembersPage() {
                     amount: parseInt(values[4]) || 1000,
                     expiry: values[5] ? new Date(values[5]).toISOString().split('T')[0] : calculateExpiry(),
                     date: new Date().toISOString().split('T')[0]
-                }, true); // Pass true to skip WhatsApp notifications and fetchAllData on per-row basis
-                successCount++;
+                });
             }
         }
-        await refreshData(); // Refresh once at the end
-        alert(`Import completed! Added ${successCount} members.`);
+
+        if (batch.length === 0) return alert('No valid rows found in CSV.');
+
+        try {
+            // Single HTTP request for the entire batch
+            const result = await bulkImportMembers(batch);
+            alert(`Import complete! ${result.inserted} members added successfully.`);
+        } catch (err: any) {
+            alert(`Import failed: ${err.message}`);
+        }
+
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);

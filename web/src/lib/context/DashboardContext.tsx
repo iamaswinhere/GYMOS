@@ -66,6 +66,7 @@ interface DashboardContextType extends DashboardState {
   logout: () => void;
   refreshData: () => Promise<void>;
   addMember: (member: Omit<Member, 'id'>, skipNotifications?: boolean) => Promise<void>;
+  bulkImportMembers: (members: Omit<Member, 'id'>[]) => Promise<{ inserted: number }>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
   renewMember: (id: string, months: number) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
@@ -385,6 +386,34 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const bulkImportMembers = async (membersList: Omit<Member, 'id'>[]) => {
+    const payload = membersList.map(m => ({
+      name: m.name,
+      mobileNumber: m.number,
+      membershipStatus: m.status || 'active',
+      membershipPlan: {
+        name: m.plan || 'Monthly GYM',
+        durationMonths: 1,
+        price: m.amount || 1000,
+      },
+      expiryDate: m.expiry,
+    }));
+
+    const res = await authenticatedFetch(`${BASE_URL}/members/bulk-import`, {
+      method: 'POST',
+      body: JSON.stringify({ members: payload }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || 'Bulk import failed');
+    }
+
+    const data = await res.json();
+    await fetchAllData();
+    return data as { inserted: number };
+  };
+
   const updateMember = async (id: string, memberData: Partial<Member>) => {
     try {
       const payload: any = { ...memberData };
@@ -549,7 +578,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       login,
       logout,
       refreshData: fetchAllData,
-      addMember, 
+      addMember,
+      bulkImportMembers,
       updateMember,
       renewMember,
       deleteMember,

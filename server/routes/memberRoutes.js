@@ -98,6 +98,44 @@ router.get('/all', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Bulk import members from CSV (Admin Only) — single request, single DB operation
+router.post('/bulk-import', auth, adminOnly, async (req, res) => {
+  try {
+    const { members } = req.body;
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({ message: 'No members provided.' });
+    }
+
+    const docs = members.map(m => ({
+      name: m.name,
+      mobileNumber: m.mobileNumber,
+      membershipStatus: m.membershipStatus || 'active',
+      membershipPlan: {
+        name: m.membershipPlan?.name || 'Monthly GYM',
+        durationMonths: m.membershipPlan?.durationMonths || 1,
+        price: m.membershipPlan?.price || 1000,
+      },
+      expiryDate: m.expiryDate ? new Date(m.expiryDate) : (() => {
+        const d = new Date(); d.setMonth(d.getMonth() + 1); return d;
+      })(),
+      joiningDate: new Date(),
+    }));
+
+    // ordered: false → skip duplicates (unique mobileNumber) without stopping the batch
+    const result = await Member.insertMany(docs, { ordered: false }).catch(err => {
+      if (err.code === 11000 || err.name === 'BulkWriteError') {
+        return err.insertedDocs || [];
+      }
+      throw err;
+    });
+
+    const inserted = Array.isArray(result) ? result.length : (result?.insertedCount ?? 0);
+    res.status(201).json({ message: `Bulk import complete.`, inserted });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Update member (Admin Only)
 router.put('/update/:id', auth, adminOnly, async (req, res) => {
   try {
