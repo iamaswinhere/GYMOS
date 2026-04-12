@@ -64,7 +64,8 @@ interface DashboardState {
 interface DashboardContextType extends DashboardState {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  addMember: (member: Omit<Member, 'id'>) => Promise<void>;
+  refreshData: () => Promise<void>;
+  addMember: (member: Omit<Member, 'id'>, skipNotifications?: boolean) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
   renewMember: (id: string, months: number) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
@@ -342,7 +343,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const addMember = async (memberData: Omit<Member, 'id'>) => {
+  const addMember = async (memberData: Omit<Member, 'id'>, skipNotifications: boolean = false) => {
     try {
       const payload = {
         name: memberData.name,
@@ -363,18 +364,21 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       if (res.ok) {
         const savedMember = await res.json();
-        const ownerNumber = '919567950284';
-        const waMessage = encodeURIComponent(
-          `🏋️ *GYMOS New Signup Alert!*\n\n` +
-          `👤 *Name:* ${savedMember.name}\n` +
-          `📱 *Phone:* ${savedMember.mobileNumber}\n` +
-          `💳 *Plan:* ${savedMember.membershipPlan.name}\n` +
-          `💰 *Amount Paid:* ₹${savedMember.membershipPlan.price}\n` +
-          `📅 *Expiry:* ${new Date(savedMember.expiryDate).toLocaleDateString()}\n\n` +
-          `_Real-time update from GYMOS Admin Portal._`
-        );
-        window.open(`https://wa.me/${ownerNumber}?text=${waMessage}`, '_blank');
-        await fetchAllData();
+        
+        if (!skipNotifications) {
+          const ownerNumber = '919567950284';
+          const waMessage = encodeURIComponent(
+            `🏋️ *GYMOS New Signup Alert!*\n\n` +
+            `👤 *Name:* ${savedMember.name}\n` +
+            `📱 *Phone:* ${savedMember.mobileNumber}\n` +
+            `💳 *Plan:* ${savedMember.membershipPlan.name}\n` +
+            `💰 *Amount Paid:* ₹${savedMember.membershipPlan.price}\n` +
+            `📅 *Expiry:* ${new Date(savedMember.expiryDate).toLocaleDateString()}\n\n` +
+            `_Real-time update from GYMOS Admin Portal._`
+          );
+          window.open(`https://wa.me/${ownerNumber}?text=${waMessage}`, '_blank');
+          await fetchAllData();
+        }
       }
     } catch (error) {
        console.error("Add member failed", error);
@@ -544,6 +548,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ...state, 
       login,
       logout,
+      refreshData: fetchAllData,
       addMember, 
       updateMember,
       renewMember,

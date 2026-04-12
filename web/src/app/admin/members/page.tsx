@@ -18,7 +18,7 @@ import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MembersPage() {
-  const { members, addMember, updateMember, renewMember, deleteMember, isLoading } = useDashboard();
+  const { members, addMember, updateMember, renewMember, deleteMember, isLoading, refreshData } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -74,10 +74,11 @@ export default function MembersPage() {
                     amount: parseInt(values[4]) || 1000,
                     expiry: values[5] ? new Date(values[5]).toISOString().split('T')[0] : calculateExpiry(),
                     date: new Date().toISOString().split('T')[0]
-                });
+                }, true); // Pass true to skip WhatsApp notifications and fetchAllData on per-row basis
                 successCount++;
             }
         }
+        await refreshData(); // Refresh once at the end
         alert(`Import completed! Added ${successCount} members.`);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
