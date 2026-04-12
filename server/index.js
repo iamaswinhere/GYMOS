@@ -21,16 +21,7 @@ if (!process.env.JWT_SECRET) {
 // Security Middleware
 app.use(helmet());
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
-
-// Middleware
+// CORS Middleware (must be before rate limiter so preflight requests get CORS headers)
 const corsEnv = process.env.CORS_ORIGIN || '*';
 const allowedOrigins = corsEnv.split(',');
 const isGlobalAllowed = allowedOrigins.includes('*');
@@ -49,6 +40,16 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Rate Limiting (after CORS, skip preflight OPTIONS requests)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Limit each IP to 500 requests per window (increased for bulk CSV operations)
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS', // Don't count preflight requests
+});
+app.use('/api/', limiter);
 
 const http = require('http');
 const { Server } = require('socket.io');
