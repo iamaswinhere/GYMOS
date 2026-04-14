@@ -9,7 +9,6 @@ import {
   Platform,
   SafeAreaView,
   Alert,
-  Linking
 } from 'react-native';
 import { 
   Bell, 
@@ -97,86 +96,8 @@ const DashboardScreen = ({ navigation }: any) => {
   const daysLeft = calculateDaysLeft();
   const isExpired = daysLeft <= 0;
 
-  const handleRenewUPI = async () => {
-    const upiId = 'Saleenabasheerzzzz-1@okicici';
-    const amount = member?.membershipPlan?.price ?? 1000;
-    const upiUrl = `upi://pay?pa=${upiId}&pn=GYMOS&cu=INR&tn=Membership_Renewal`;
-    
-    const confirmPayment = () => {
-      setTimeout(() => {
-        const msg = 'Did you complete the payment successfully in the UPI app?';
-        const onConfirm = async () => {
-          try {
-            const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ durationMonths: 1 })
-            });
-            if (res.ok) {
-              const data = await res.json();
-              alert('Membership renewed! Download receipt starting...');
-              if (data.pdf) Linking.openURL(data.pdf);
-              await refreshMember();
-            }
-          } catch (e) {
-            alert('Network error while confirming renewal');
-          }
-        };
-
-        if (Platform.OS === 'web') {
-          if (window.confirm(msg)) onConfirm();
-        } else {
-          Alert.alert('Confirm Payment', msg, [
-            { text: 'No', style: 'cancel' },
-            { text: 'Yes, Success', onPress: onConfirm }
-          ]);
-        }
-      }, 2000);
-    };
-
-    const openUpi = async () => {
-      try {
-        if (Platform.OS === 'web') {
-          window.location.href = upiUrl;
-          confirmPayment();
-        } else {
-          // Bypass canOpenURL as it is unreliable for custom schemes on newer OS versions
-          // Directly attempt to open the UPI intent
-          Linking.openURL(upiUrl).then(() => {
-              confirmPayment();
-          }).catch(() => {
-              Alert.alert(
-                'UPI App Not Found', 
-                `We couldn't launch a UPI app automatically.\n\nPlease manual pay to: ${upiId}`,
-                [{ text: 'OK', onPress: confirmPayment }]
-              );
-          });
-        }
-      } catch (e) {
-        if (Platform.OS === 'web') {
-            alert('If UPI app didn\'t open, please use UPI ID: ' + upiId);
-            confirmPayment();
-        } else {
-            Alert.alert('Error', 'Could not open UPI app. Please use ID: ' + upiId, [
-                { text: 'OK', onPress: confirmPayment }
-            ]);
-        }
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Open UPI app to pay ₹${amount}?`)) {
-        openUpi();
-      }
-    } else {
-      Alert.alert('Renew Membership', `You will be redirected to your UPI app to pay ₹${amount}.`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open UPI App', onPress: openUpi }
-      ]);
-    }
+  const handleRenewUPI = () => {
+    navigation.navigate('Payment');
   };
 
   return (
@@ -223,7 +144,7 @@ const DashboardScreen = ({ navigation }: any) => {
           </View>
 
           <TouchableOpacity style={styles.renewBtn} onPress={handleRenewUPI}>
-            <Text style={styles.renewBtnText}>RENEW VIA UPI</Text>
+            <Text style={styles.renewBtnText}>RENEW MEMBERSHIP</Text>
           </TouchableOpacity>
         </View>
 
