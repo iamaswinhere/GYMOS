@@ -100,7 +100,7 @@ const DashboardScreen = ({ navigation }: any) => {
   const handleRenewUPI = async () => {
     const upiId = 'Saleenabasheerzzzz-1@okicici';
     const amount = member?.membershipPlan?.price || 1000;
-    const upiUrl = `upi://pay?pa=${upiId}&pn=GYMOS&am=${amount}&cu=INR&tn=Membership Renewal - ${member.name}`;
+    const upiUrl = `upi://pay?pa=${upiId}&pn=GYMOS&cu=INR&tn=Membership_Renewal`;
     
     const confirmPayment = () => {
       setTimeout(() => {
