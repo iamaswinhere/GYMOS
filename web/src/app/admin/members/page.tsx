@@ -102,7 +102,7 @@ export default function MembersPage() {
 
   // Derived amount based on plan and PT
   const calculateAmount = (plan: string, hasPT: boolean) => {
-    let base = plan === 'Student' ? 1 : 1000;
+    let base = plan === 'Student' ? 899 : 1000;
     return hasPT ? base + 2000 : base;
   };
 
@@ -230,7 +230,7 @@ export default function MembersPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Member <span className="text-primary italic">Directory</span></h1>
-          <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Regular: ₹1000 | Student: ₹1 | PT: +₹2000</p>
+          <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Regular: ₹1000 | Student: ₹899 | PT: +₹2000</p>
         </div>
         <div className="flex gap-2">
           <input 
@@ -442,7 +442,7 @@ export default function MembersPage() {
                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Membership Plan</label>
                        <select value={formData.plan} onChange={(e) => setFormData({...formData, plan: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
                           <option value="Monthly GYM">Regular GYM (₹1000)</option>
-                          <option value="Student">Student Plan (₹1)</option>
+                          <option value="Student">Student Plan (₹800)</option>
                        </select>
                     </div>
                     <div className="space-y-2">
