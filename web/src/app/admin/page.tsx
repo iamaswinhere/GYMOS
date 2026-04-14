@@ -71,7 +71,7 @@ const Dashboard = () => {
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('monthly');
 
   const calculateAmount = (plan: string, pt: boolean) => {
-    let base = plan === 'Student' ? 800 : 1000;
+    let base = plan === 'Student' ? 1 : 1000;
     return pt ? base + 2000 : base;
   };
 
@@ -237,7 +237,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase transition-all italic">GYM <span className="text-primary">DASHBOARD</span></h1>
-          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Pricing: Standard ₹1000 | Student ₹800</p>
+          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Pricing: Standard ₹1000 | Student ₹1</p>
         </div>
         <div className="flex gap-2">
             <button 
@@ -410,7 +410,7 @@ const Dashboard = () => {
                         <label className="text-[9px] font-black text-gray-600 uppercase ml-2 tracking-widest">Plan</label>
                         <select value={newMemberPlan} onChange={(e) => setNewMemberPlan(e.target.value)} className="w-full bg-[#121212] border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer text-sm">
                             <option value="Monthly GYM">Regular (₹1000)</option>
-                            <option value="Student">Student (₹800)</option>
+                            <option value="Student">Student (₹1)</option>
                         </select>
                     </div>
                     <div className="space-y-1.5">

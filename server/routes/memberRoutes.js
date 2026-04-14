@@ -106,20 +106,24 @@ router.post('/bulk-import', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ message: 'No members provided.' });
     }
 
-    const docs = members.map(m => ({
-      name: m.name,
-      mobileNumber: m.mobileNumber,
-      membershipStatus: m.membershipStatus || 'active',
-      membershipPlan: {
-        name: m.membershipPlan?.name || 'Monthly GYM',
-        durationMonths: m.membershipPlan?.durationMonths || 1,
-        price: m.membershipPlan?.price || 1000,
-      },
-      expiryDate: m.expiryDate ? new Date(m.expiryDate) : (() => {
-        const d = new Date(); d.setMonth(d.getMonth() + 1); return d;
-      })(),
-      joiningDate: new Date(),
-    }));
+    const docs = members.map(m => {
+      const planName = m.membershipPlan?.name || 'Monthly GYM';
+      const defaultPrice = planName.toLowerCase().includes('student') ? 1 : 1000;
+      return {
+        name: m.name,
+        mobileNumber: m.mobileNumber,
+        membershipStatus: m.membershipStatus || 'active',
+        membershipPlan: {
+          name: planName,
+          durationMonths: m.membershipPlan?.durationMonths || 1,
+          price: m.membershipPlan?.price !== undefined ? m.membershipPlan.price : defaultPrice,
+        },
+        expiryDate: m.expiryDate ? new Date(m.expiryDate) : (() => {
+          const d = new Date(); d.setMonth(d.getMonth() + 1); return d;
+        })(),
+        joiningDate: new Date(),
+      };
+    });
 
     // ordered: false → skip duplicates (unique mobileNumber) without stopping the batch
     const result = await Member.insertMany(docs, { ordered: false }).catch(err => {
