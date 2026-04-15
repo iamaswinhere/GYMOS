@@ -59,7 +59,9 @@ const Dashboard = () => {
     searchQuery,
     searchResult,
     isLoading,
-    payments
+    payments,
+    verifyPayment,
+    rejectPayment
   } = useDashboard();
 
   const router = useRouter();
@@ -362,21 +364,48 @@ const Dashboard = () => {
                    <p className="text-[10px] text-gray-700 font-black uppercase tracking-widest text-center">No recent activity.</p>
                 </div>
               ) : (
-                payments.slice(0, 4).map((payment) => (
-                  <div key={payment.id} className="flex items-center gap-4 group cursor-default">
-                    <div className="w-10 h-10 bg-[#121212] rounded-xl flex items-center justify-center border border-white/5 text-gray-500 group-hover:text-primary group-hover:border-primary/50 transition-all font-black text-xs uppercase">
-                        {payment.name?.charAt(0) || '?'}
+                 payments.slice(0, 6).map((payment) => {
+                   const isPending = payment.status === 'pending';
+                   return (
+                    <div key={payment.id} className={`flex items-center gap-4 group p-2 rounded-2xl transition-all ${isPending ? 'bg-primary/5 border border-primary/20 animate-pulse' : 'hover:bg-white/[0.02]'}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all font-black text-xs uppercase ${isPending ? 'bg-primary text-black border-primary' : 'bg-[#121212] text-gray-500 border-white/5 group-hover:text-primary group-hover:border-primary/50'}`}>
+                          {isPending ? '?' : (payment.name?.charAt(0) || '?')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-white group-hover:text-primary transition-colors truncate">{payment.name || 'Member'}</p>
+                        <p className={`text-[9px] font-bold uppercase tracking-tighter ${isPending ? 'text-primary' : 'text-gray-600'}`}>
+                          {isPending ? `CHECK UTR: ${payment.id.slice(-8).toUpperCase()}` : `${payment.plan || 'Plan'} • ${getRelativeTime(payment.createdAt || payment.date)}`}
+                        </p>
+                      </div>
+                      <div className="text-right flex items-center gap-3">
+                        <div className="hidden sm:block">
+                          <p className={`text-xs font-black italic ${isPending ? 'text-primary' : 'text-white'}`}>₹{(payment.amount || 0).toLocaleString()}</p>
+                          <p className={`text-[8px] font-black uppercase tracking-widest italic ${isPending ? 'text-primary/70' : 'text-emerald-500/70'}`}>
+                            {isPending ? 'PENDING' : 'Success'}
+                          </p>
+                        </div>
+                        {isPending && (
+                          <div className="flex gap-2">
+                             <button 
+                                onClick={() => verifyPayment(payment.id)}
+                                className="w-8 h-8 rounded-lg bg-emerald-500 text-black flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-emerald-500/20"
+                                title="Approve Payment"
+                             >
+                                <Check size={14} strokeWidth={4} />
+                             </button>
+                             <button 
+                                onClick={() => rejectPayment(payment.id)}
+                                className="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-red-500/20"
+                                title="Reject Payment"
+                             >
+                                <X size={14} strokeWidth={4} />
+                             </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-white group-hover:text-primary transition-colors">{payment.name || 'Member'}</p>
-                      <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">{payment.plan || 'Plan'} • {getRelativeTime(payment.createdAt || payment.date)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-black text-white italic">₹{(payment.amount || 0).toLocaleString()}</p>
-                      <p className="text-[8px] text-emerald-500/70 font-black uppercase tracking-widest italic">Success</p>
-                    </div>
-                  </div>
-                ))
+                  );
+                 })
               )}
             </div>
           </div>

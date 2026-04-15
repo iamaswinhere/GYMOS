@@ -173,7 +173,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         name: p.memberId?.name || 'Member',
         number: '',
         plan: p.planName || 'Signup',
-        status: 'active' as const,
+        status: p.status || 'success',
         expiry: '',
         amount: p.amount || 0,
         date: p.paymentDate || p.createdAt,
@@ -572,6 +572,28 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setState(prev => ({ ...prev, notifications: [] }));
   };
 
+  const verifyPayment = async (id: string) => {
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/payments/verify/${id}`, {
+        method: 'PATCH'
+      });
+      if (res.ok) await fetchAllData();
+    } catch (error) {
+      console.error("Verify payment failed", error);
+    }
+  };
+
+  const rejectPayment = async (id: string) => {
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/payments/reject/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) await fetchAllData();
+    } catch (error) {
+       console.error("Reject payment failed", error);
+    }
+  };
+
   return (
     <DashboardContext.Provider value={{ 
       ...state, 
@@ -588,7 +610,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSearchQuery, 
       generateAIReport,
       clearNotifications,
-      updateSettings
+      updateSettings,
+      verifyPayment,
+      rejectPayment
     }}>
       {children}
     </DashboardContext.Provider>

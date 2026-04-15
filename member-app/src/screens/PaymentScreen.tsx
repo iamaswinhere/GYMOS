@@ -11,6 +11,7 @@ import {
   Alert,
   Linking,
   Image,
+  TextInput,
 } from 'react-native';
 import { ArrowLeft, CheckCircle } from 'lucide-react-native';
 import { COLORS, SIZES } from '../constants/theme';
@@ -21,6 +22,7 @@ const PaymentScreen = ({ navigation }: any) => {
   const { member, token, refreshMember } = useContext(AuthContext);
   const [paymentDone, setPaymentDone] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [utr, setUtr] = useState('');
 
   const upiId = 'aswin005achu-1@oksbi';
   const payeeName = 'GYMOS';
@@ -84,7 +86,7 @@ const PaymentScreen = ({ navigation }: any) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
+        body: JSON.stringify({ durationMonths: 1, amountPaid: amount, transactionId: utr }),
       });
 
       if (res.ok) {
@@ -173,11 +175,25 @@ const PaymentScreen = ({ navigation }: any) => {
               ))}
             </View>
 
+            {/* UTR Input */}
+            <View style={styles.utrContainer}>
+              <Text style={styles.utrLabel}>ENTER 12-DIGIT UPI REFERENCE NUMBER</Text>
+              <TextInput 
+                style={styles.utrInput}
+                placeholder="e.g. 301245678901"
+                placeholderTextColor="rgba(255,255,255,0.3)"
+                keyboardType="numeric"
+                maxLength={12}
+                value={utr}
+                onChangeText={setUtr}
+              />
+            </View>
+
             {/* Confirm Button */}
             <TouchableOpacity
-              style={[styles.confirmBtn, confirming && { opacity: 0.6 }]}
+              style={[styles.confirmBtn, (confirming || utr.length !== 12) && { opacity: 0.6 }]}
               onPress={handleConfirmPayment}
-              disabled={confirming}
+              disabled={confirming || utr.length !== 12}
               activeOpacity={0.8}
             >
               <Text style={styles.confirmBtnText}>
@@ -281,6 +297,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   appBtnText: { fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  utrContainer: {
+    marginBottom: 20,
+  },
+  utrLabel: {
+    color: '#888',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  utrInput: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 14,
+    padding: 16,
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
   confirmBtn: {
     backgroundColor: COLORS.primary,
     padding: 18,
