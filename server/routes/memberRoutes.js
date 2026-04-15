@@ -164,7 +164,7 @@ const { jsPDF } = require("jspdf");
 const { default: autoTable } = require("jspdf-autotable");
 
 // Renew membership (Admin Only or Token Protected)
-router.post('/renew/:id', auth, adminOnly, async (req, res) => {
+router.post('/renew/:id', auth, async (req, res) => {
   try {
     const { durationMonths, amountPaid } = req.body;
     const member = await Member.findById(req.params.id);
