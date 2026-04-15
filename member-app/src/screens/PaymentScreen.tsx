@@ -24,7 +24,7 @@ const PaymentScreen = ({ navigation }: any) => {
 
   const upiId = 'Saleenabasheerzzzz-1@okicici';
   const payeeName = 'GYMOS';
-  const amount = member?.membershipPlan?.price ?? 1000;
+  const amount = member?.membershipPlan?.price ?? 1;
   const note = 'GymMembershipRenewal';
 
   // Per-app intent URLs — these bypass the generic upi:// limit checks
