@@ -108,7 +108,7 @@ router.post('/bulk-import', auth, adminOnly, async (req, res) => {
 
     const docs = members.map(m => {
       const planName = m.membershipPlan?.name || 'Monthly GYM';
-      const defaultPrice = planName.toLowerCase().includes('student') ? 1 : 1000;
+      const defaultPrice = 1;
       return {
         name: m.name,
         mobileNumber: m.mobileNumber,
