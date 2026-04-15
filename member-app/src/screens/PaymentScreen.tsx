@@ -22,7 +22,7 @@ const PaymentScreen = ({ navigation }: any) => {
   const [paymentDone, setPaymentDone] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const upiId = 'Saleenabasheerzzzz-1@okicici';
+  const upiId = 'aswin005achu-1@oksbi';
   const payeeName = 'GYMOS';
   const amount = member?.membershipPlan?.price ?? 1;
   const note = 'GymMembershipRenewal';
