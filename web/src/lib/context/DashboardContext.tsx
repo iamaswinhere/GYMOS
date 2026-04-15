@@ -394,7 +394,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       membershipPlan: {
         name: m.plan || 'Monthly GYM',
         durationMonths: 1,
-        price: m.amount || 1000,
+        price: m.amount || 1,
       },
       expiryDate: m.expiry,
     }));
