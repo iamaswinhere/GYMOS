@@ -98,117 +98,51 @@ const DashboardScreen = ({ navigation }: any) => {
 
   const [renewing, setRenewing] = useState(false);
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const scriptId = 'razorpay-checkout-js';
-      if (!document.getElementById(scriptId)) {
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.async = true;
-        document.body.appendChild(script);
-      }
-    }
-  }, []);
-
   const handleRenewMembership = async () => {
     const amount = member?.membershipPlan?.price ?? 1;
 
     Alert.alert(
-      'Confirm Renewal',
-      `Are you sure you want to renew your membership for ${amount} INR?`,
+      'Renew Membership',
+      `Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Pay Now', 
+          text: 'Confirm', 
           onPress: async () => {
             setRenewing(true);
             try {
-              // 1. Create Order
-              const orderRes = await fetch(`${API_URL}/api/razorpay/create-order`, {
+              const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ amount: amount }),
+                body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
               });
 
-              if (!orderRes.ok) throw new Error('Order creation failed');
-              const orderData = await orderRes.json();
-
-              // 2. Open Razorpay Checkout
-              if (Platform.OS === 'web') {
-                const options = {
-                  key: require('../constants/config').RAZORPAY_KEY_ID,
-                  amount: orderData.amount,
-                  currency: orderData.currency,
-                  name: 'GYMOS Elite',
-                  description: `Membership Renewal - ${member.membershipPlan.name}`,
-                  order_id: orderData.id,
-                  handler: async (response: any) => {
-                    verifyPayment(response, amount);
-                  },
-                  prefill: {
-                    name: member.name,
-                    contact: member.mobileNumber,
-                    email: member.email || '',
-                  },
-                  theme: { color: COLORS.primary },
-                };
-                const rzp = new (window as any).Razorpay(options);
-                rzp.open();
+              if (res.ok) {
+                const data = await res.json();
+                await refreshMember();
+                Alert.alert('Success', 'Membership renewed successfully for 1 month!');
+                
+                if (Platform.OS === 'web' && data.pdf) {
+                  const link = document.createElement('a');
+                  link.href = data.pdf;
+                  link.download = `GYMOS_Receipt.pdf`;
+                  link.click();
+                }
               } else {
-                // For Native: Integrate react-native-razorpay logic here
-                // Note: Requires react-native-razorpay package and custom dev client
-                Alert.alert('Notice', 'Mobile native payment integration is configured. For development builds, ensure react-native-razorpay is installed.');
-                setRenewing(false);
+                Alert.alert('Error', 'Could not renew membership.');
               }
             } catch (err) {
-              Alert.alert('Error', 'Could not initiate payment. Please try again.');
+              Alert.alert('Network Error', 'Please check your connection and try again.');
+            } finally {
               setRenewing(false);
             }
           }
         }
       ]
     );
-  };
-
-  const verifyPayment = async (razorpayResponse: any, amount: number) => {
-    try {
-      const res = await fetch(`${API_URL}/api/razorpay/verify-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...razorpayResponse,
-          memberId: member._id,
-          durationMonths: 1, // Default to 1 month or from member.plan
-          amountPaid: amount,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        await refreshMember();
-        Alert.alert('Success', 'Membership renewed successfully!');
-        
-        if (Platform.OS === 'web' && data.pdf) {
-          const link = document.createElement('a');
-          link.href = data.pdf;
-          link.download = `GYMOS_Receipt.pdf`;
-          link.click();
-        }
-      } else {
-        Alert.alert('Verification Failed', 'Payment verification failed. Please contact admin.');
-      }
-    } catch (err) {
-      Alert.alert('Network Error', 'Verification failed. Please contact support.');
-    } finally {
-      setRenewing(false);
-    }
   };
 
   return (
