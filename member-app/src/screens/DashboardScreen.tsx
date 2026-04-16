@@ -141,8 +141,6 @@ const DashboardScreen = ({ navigation }: any) => {
               {!isExpired && <Text style={{ color: COLORS.primary }}>{daysLeft} Days</Text>}
             </Text>
           </View>
-          </View>
-
           <TouchableOpacity style={styles.renewBtn} onPress={handleRenewUPI}>
             <Text style={styles.renewBtnText}>RENEW MEMBERSHIP</Text>
           </TouchableOpacity>
