@@ -28,7 +28,7 @@ const PaymentScreen = ({ navigation }: any) => {
 
   // Listen for real-time payment success via WebSockets
   useEffect(() => {
-    const socket = io(API_URL.replace('/api', ''));
+    const socket = io(API_URL);
     
     socket.on('paymentUpdate', (data) => {
       if (data.memberId === member?._id && data.type === 'renewal') {
@@ -46,7 +46,7 @@ const PaymentScreen = ({ navigation }: any) => {
   const handleInitializePayment = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/razorpay/create-link`, {
+      const res = await fetch(`${API_URL}/api/razorpay/create-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
