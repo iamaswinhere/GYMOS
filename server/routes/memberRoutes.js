@@ -165,7 +165,6 @@ const { default: autoTable } = require("jspdf-autotable");
 
 // Renew membership (Admin Only or Token Protected)
 router.post('/renew/:id', auth, async (req, res) => {
-  console.log(`[Renewal API] Request received for member ID: ${req.params.id}`);
   try {
     const { durationMonths, amountPaid } = req.body;
     const member = await Member.findById(req.params.id);
@@ -185,7 +184,7 @@ router.post('/renew/:id', auth, async (req, res) => {
     
     await member.save();
 
-    // 0. STORE PAYMENT IN DATABASE
+    // 0. STORE PAYMENT IN DATABASE (Instant success per plan)
     const newPayment = new Payment({
       memberId: member._id,
       amount: amountPaid || member.membershipPlan.price,
@@ -196,19 +195,20 @@ router.post('/renew/:id', auth, async (req, res) => {
     await newPayment.save();
 
     // 1. REAL-TIME DASHBOARD UPDATE
-    req.io.emit('paymentUpdate', {
-      memberId: member._id,
-      memberName: member.name,
-      amount: amountPaid || member.membershipPlan.price,
-      date: now,
-      plan: member.membershipPlan.name,
-      type: 'renewal'
-    });
+    if (req.io) {
+      req.io.emit('paymentUpdate', {
+        memberId: member._id,
+        memberName: member.name,
+        amount: amountPaid || member.membershipPlan.price,
+        date: now,
+        plan: member.membershipPlan.name,
+        type: 'renewal'
+      });
+    }
 
     // 2. GENERATE PDF BILL
     const doc = new jsPDF();
     
-    // Design matching GYMOS elite style
     doc.setFillColor(0, 0, 0);
     doc.rect(0, 0, 210, 40, 'F');
     

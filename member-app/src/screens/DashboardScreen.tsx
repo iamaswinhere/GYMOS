@@ -95,73 +95,8 @@ const DashboardScreen = ({ navigation }: any) => {
 
   const daysLeft = calculateDaysLeft();
   const isExpired = daysLeft <= 0;
-
-  const [renewing, setRenewing] = useState(false);
-
-  const handleRenewMembership = async () => {
-    const amount = member?.membershipPlan?.price ?? 1;
-
-    const performRenewal = async () => {
-      setRenewing(true);
-      console.log(`[Renewal] Starting renewal for member ${member._id} with amount ${amount}`);
-      try {
-        const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
-        });
-
-        const data = await res.json();
-        console.log(`[Renewal] Server response:`, data);
-
-        if (res.ok) {
-          await refreshMember();
-          const msg = 'Membership renewed successfully for 1 month!';
-          if (Platform.OS === 'web') {
-            window.alert(msg);
-          } else {
-            Alert.alert('Success', msg);
-          }
-          
-          if (Platform.OS === 'web' && data.pdf) {
-            const link = document.createElement('a');
-            link.href = data.pdf;
-            link.download = `GYMOS_Receipt.pdf`;
-            link.click();
-          }
-        } else {
-          const errMsg = data.message || 'Could not renew membership.';
-          console.error(`[Renewal] Failed:`, errMsg);
-          if (Platform.OS === 'web') window.alert('Error: ' + errMsg);
-          else Alert.alert('Error', errMsg);
-        }
-      } catch (err) {
-        console.error(`[Renewal] Network/Error:`, err);
-        const netMsg = 'Please check your connection and try again.';
-        if (Platform.OS === 'web') window.alert('Network Error: ' + netMsg);
-        else Alert.alert('Network Error', netMsg);
-      } finally {
-        setRenewing(false);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      if (window.confirm(`Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`)) {
-        performRenewal();
-      }
-    } else {
-      Alert.alert(
-        'Renew Membership',
-        `Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Confirm', onPress: performRenewal }
-        ]
-      );
-    }
+  const handleRenewUPI = () => {
+    navigation.navigate('Payment');
   };
 
   return (
@@ -187,7 +122,7 @@ const DashboardScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
         </View>
-
+ 
         {/* Membership Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
@@ -206,13 +141,10 @@ const DashboardScreen = ({ navigation }: any) => {
               {!isExpired && <Text style={{ color: COLORS.primary }}>{daysLeft} Days</Text>}
             </Text>
           </View>
+          </View>
 
-          <TouchableOpacity 
-            style={[styles.renewBtn, renewing && { opacity: 0.7 }]} 
-            onPress={handleRenewMembership}
-            disabled={renewing}
-          >
-            <Text style={styles.renewBtnText}>{renewing ? 'RENEWING...' : 'RENEW MEMBERSHIP'}</Text>
+          <TouchableOpacity style={styles.renewBtn} onPress={handleRenewUPI}>
+            <Text style={styles.renewBtnText}>RENEW MEMBERSHIP</Text>
           </TouchableOpacity>
         </View>
 
