@@ -50,35 +50,4 @@ router.get('/income-report', auth, adminOnly, async (req, res) => {
   }
 });
 
-// Verify a pending payment (Admin Only)
-router.patch('/verify/:id', auth, adminOnly, async (req, res) => {
-  try {
-    const payment = await Payment.findById(req.params.id);
-    if (!payment) return res.status(404).json({ message: 'Payment not found' });
-    
-    payment.status = 'success';
-    await payment.save();
-    
-    res.json({ message: 'Payment verified successfully', payment });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Reject a pending payment (Admin Only)
-router.delete('/reject/:id', auth, adminOnly, async (req, res) => {
-  try {
-    const payment = await Payment.findById(req.params.id);
-    if (!payment) return res.status(404).json({ message: 'Payment not found' });
-    
-    // Note: In a real system, we might want to "revert" the expiry change on the member as well.
-    // For now, we simply delete the fraudulent payment record.
-    await Payment.findByIdAndDelete(req.params.id);
-    
-    res.json({ message: 'Payment rejected and removed' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
 module.exports = router;

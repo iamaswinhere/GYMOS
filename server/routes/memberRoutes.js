@@ -190,7 +190,7 @@ router.post('/renew/:id', auth, async (req, res) => {
       amount: amountPaid || member.membershipPlan.price,
       paymentMethod: 'online',
       planName: member.membershipPlan.name,
-      status: 'pending' // Requires Admin verification of UTR
+      status: 'success'
     });
     await newPayment.save();
 
