@@ -106,6 +106,7 @@ app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/leads', require('./routes/leadRoutes'));
+app.use('/api/razorpay', require('./routes/razorpayRoutes'));
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);

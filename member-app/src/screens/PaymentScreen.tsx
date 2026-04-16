@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,101 +10,63 @@ import {
   Platform,
   Alert,
   Linking,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
-import { ArrowLeft, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, ShieldCheck, Zap } from 'lucide-react-native';
 import { COLORS, SIZES } from '../constants/theme';
 import { AuthContext } from '../context/AuthContext';
 import { API_URL } from '../constants/config';
+import { io } from 'socket.io-client';
 
 const PaymentScreen = ({ navigation }: any) => {
   const { member, token, refreshMember } = useContext(AuthContext);
   const [paymentDone, setPaymentDone] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
 
-  const upiId = 'aswin005achu-1@oksbi';
-  const payeeName = 'GYMOS';
   const amount = member?.membershipPlan?.price ?? 1;
-  const note = 'GymMembershipRenewal';
 
-  // Per-app intent URLs — Using tez:// for GPay as requested for reliability
-  const upiApps = [
-    {
-      name: 'Google Pay',
-      color: '#4285F4',
-      bg: 'rgba(66,133,244,0.12)',
-      url: `tez://upi/pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tn=${note}`,
-      webUrl: `https://pay.google.com/`,
-    },
-    {
-      name: 'PhonePe',
-      color: '#5f259f',
-      bg: 'rgba(95,37,159,0.12)',
-      url: `phonepe://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tn=${note}`,
-      webUrl: `https://www.phonepe.com/`,
-    },
-    {
-      name: 'Paytm',
-      color: '#00BAF2',
-      bg: 'rgba(0,186,242,0.12)',
-      url: `paytmmp://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tn=${note}`,
-      webUrl: `https://paytm.com/`,
-    },
-    {
-      name: 'BHIM / Any UPI App',
-      color: '#FF6D00',
-      bg: 'rgba(255,109,0,0.12)',
-      url: `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tn=${note}`,
-      webUrl: null,
-    },
-  ];
-
-  const upiQrData = `upi://pay?pa=${upiId}&pn=${payeeName}&am=${amount}&cu=INR&tn=${note}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiQrData)}&color=ffc400&bgcolor=121212&margin=10`;
-
-  const openApp = async (app: typeof upiApps[0]) => {
-    try {
-      await Linking.openURL(app.url);
-    } catch {
-      if (app.webUrl) {
-        Linking.openURL(app.webUrl);
-      } else {
-        Alert.alert('App not installed', `${app.name} is not installed on your device.`);
+  // Listen for real-time payment success via WebSockets
+  useEffect(() => {
+    const socket = io(API_URL.replace('/api', ''));
+    
+    socket.on('paymentUpdate', (data) => {
+      if (data.memberId === member?._id && data.type === 'renewal') {
+        setPaymentDone(true);
+        refreshMember();
+        setTimeout(() => navigation.replace('Dashboard'), 3000);
       }
-    }
-  };
+    });
 
-  const handleConfirmPayment = async () => {
-    setConfirming(true);
+    return () => {
+      socket.disconnect();
+    };
+  }, [member?._id]);
+
+  const handleInitializePayment = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
+      const res = await fetch(`${API_URL}/razorpay/create-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
+        body: JSON.stringify({ durationMonths: 1 }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setPaymentDone(true);
-        await refreshMember();
-        setTimeout(() => navigation.replace('Dashboard'), 2500);
-        
-        if (Platform.OS === 'web' && data.pdf) {
-          const link = document.createElement('a');
-          link.href = data.pdf;
-          link.download = `GYMOS_Receipt.pdf`;
-          link.click();
-        }
+      const data = await res.json();
+      if (res.ok && data.paymentLink) {
+        setPaymentLink(data.paymentLink);
+        // Open the secure Razorpay checkout link
+        Linking.openURL(data.paymentLink);
       } else {
-        Alert.alert('Error', 'Could not confirm renewal. Please contact support.');
+        Alert.alert('Error', data.message || 'Failed to initialize payment.');
       }
-    } catch {
-      Alert.alert('Network Error', 'Please check your internet and try again.');
+    } catch (err) {
+      Alert.alert('Network Error', 'Check your connection and try again.');
     } finally {
-      setConfirming(false);
+      setLoading(false);
     }
   };
 
@@ -116,68 +78,75 @@ const PaymentScreen = ({ navigation }: any) => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ArrowLeft color={COLORS.white} size={22} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>RENEW MEMBERSHIP</Text>
+        <Text style={styles.headerTitle}>SECURE CHECKOUT</Text>
         <div style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {paymentDone ? (
           <View style={styles.successBlock}>
-            <CheckCircle color={COLORS.success} size={72} />
-            <Text style={styles.successTitle}>RENEWED!</Text>
-            <Text style={styles.successSub}>Your membership has been extended by 1 month.</Text>
+            <CheckCircle color={COLORS.success} size={80} strokeWidth={3} />
+            <Text style={styles.successTitle}>PAYMENT VERIFIED</Text>
+            <Text style={styles.successSub}>Your membership was renewed automatically. Redirecting to dashboard...</Text>
           </View>
         ) : (
           <>
-            <View style={styles.amountCard}>
-              <Text style={styles.amountLabel}>AMOUNT TO PAY</Text>
-              <Text style={styles.amountValue}>₹{amount.toLocaleString()}</Text>
-              <Text style={styles.amountSub}>UPI ID: {upiId}</Text>
-            </View>
-
-            <View style={styles.qrContainer}>
-              <Text style={styles.sectionLabel}>SCAN WITH ANY UPI APP</Text>
-              <View style={styles.qrFrame}>
-                <Image
-                  source={{ uri: qrImageUrl }}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
+            <View style={styles.infoCard}>
+              <View style={styles.planHeader}>
+                <Zap color={COLORS.primary} size={20} fill={COLORS.primary} />
+                <Text style={styles.planName}>{member?.membershipPlan?.name?.toUpperCase() || 'MEMBERSHIP'}</Text>
+              </View>
+              
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabel}>TOTAL AMOUNT</Text>
+                <Text style={styles.priceValue}>₹{amount.toLocaleString()}</Text>
+              </View>
+              
+              <View style={styles.detailsList}>
+                <View style={styles.detailItem}>
+                   <View style={styles.dot} />
+                   <Text style={styles.detailText}>Automated Renewal (1 Month)</Text>
+                </View>
+                <View style={styles.detailItem}>
+                   <View style={styles.dot} />
+                   <Text style={styles.detailText}>Instant Expiry Update</Text>
+                </View>
+                <View style={styles.detailItem}>
+                   <View style={styles.dot} />
+                   <Text style={styles.detailText}>Secure Razorpay Checkout</Text>
+                </View>
               </View>
             </View>
 
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR OPEN APP DIRECTLY</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.appsGrid}>
-              {upiApps.map((app) => (
-                <TouchableOpacity
-                  key={app.name}
-                  style={[styles.appBtn, { backgroundColor: app.bg, borderColor: app.color + '44' }]}
-                  onPress={() => openApp(app)}
-                  activeOpacity={0.75}
-                >
-                  <Text style={[styles.appBtnText, { color: app.color }]}>{app.name}</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.securityBanner}>
+                <ShieldCheck color="#4CAF50" size={18} />
+                <Text style={styles.securityText}>100% SECURE ENCRYPTED PAYMENTS</Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.confirmBtn, confirming && { opacity: 0.6 }]}
-              onPress={handleConfirmPayment}
-              disabled={confirming}
+              style={[styles.payBtn, loading && { opacity: 0.7 }]}
+              onPress={handleInitializePayment}
+              disabled={loading}
               activeOpacity={0.8}
             >
-              <Text style={styles.confirmBtnText}>
-                {confirming ? 'CONFIRMING...' : "✓  I'VE PAID — CONFIRM RENEWAL"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={styles.payBtnText}>PAY SECURELY WITH RAZORPAY</Text>
+              )}
             </TouchableOpacity>
 
+            {paymentLink && (
+               <TouchableOpacity 
+                 onPress={() => Linking.openURL(paymentLink)}
+                 style={styles.retryLink}
+               >
+                 <Text style={styles.retryText}>Payment link not opening? Tap here</Text>
+               </TouchableOpacity>
+            )}
+
             <Text style={styles.disclaimer}>
-              Tap this button only after completing payment. Your expiry will be extended automatically.
+              After payment, you will be redirected back to GYMOS. Your membership will refresh automatically.
             </Text>
           </>
         )}
@@ -187,118 +156,123 @@ const PaymentScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: '#050505' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: SIZES.padding,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    color: COLORS.white,
-    fontSize: 13,
+    color: '#888',
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 2,
   },
   scroll: { padding: SIZES.padding, paddingBottom: 60 },
-  amountCard: {
-    backgroundColor: COLORS.darkGray,
-    borderRadius: SIZES.radius,
-    padding: 28,
-    alignItems: 'center',
-    marginBottom: 28,
+  infoCard: {
+    backgroundColor: '#0D0D0D',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,196,0,0.15)',
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginTop: 10,
   },
-  amountLabel: {
-    color: '#666',
-    fontSize: 11,
+  planHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 24,
+  },
+  planName: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 10,
+    letterSpacing: 1.5,
   },
-  amountValue: {
-    color: COLORS.primary,
-    fontSize: 52,
-    fontWeight: '900',
-    letterSpacing: -2,
-    marginBottom: 8,
+  priceRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    paddingBottom: 20,
+    marginBottom: 20,
   },
-  amountSub: {
-    color: '#555',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  qrContainer: { alignItems: 'center', marginBottom: 28 },
-  sectionLabel: {
+  priceLabel: {
     color: '#555',
     fontSize: 10,
     fontWeight: '900',
-    letterSpacing: 2,
-    marginBottom: 16,
+    letterSpacing: 1,
+    marginBottom: 6,
   },
-  qrFrame: {
-    padding: 12,
-    backgroundColor: '#121212',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,196,0,0.2)',
+  priceValue: {
+    color: COLORS.primary,
+    fontSize: 48,
+    fontWeight: '900',
+    letterSpacing: -1,
   },
-  qrImage: { width: 220, height: 220, borderRadius: 12 },
-  dividerRow: {
+  detailsList: { gap: 12 },
+  detailItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.primary },
+  detailText: { color: '#888', fontSize: 13, fontWeight: '600' },
+  securityBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    gap: 10,
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 32,
+    marginTop: 10,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.07)' },
-  dividerText: { color: '#444', fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  appsGrid: { gap: 12, marginBottom: 32 },
-  appBtn: {
-    padding: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
+  securityText: {
+    color: '#4CAF50',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
-  appBtnText: { fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
-  confirmBtn: {
+  payBtn: {
     backgroundColor: COLORS.primary,
-    padding: 18,
-    borderRadius: 16,
+    height: 64,
+    borderRadius: 18,
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  confirmBtnText: { color: '#000', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
+  payBtnText: { color: '#000', fontSize: 15, fontWeight: '900', letterSpacing: 0.5 },
+  retryLink: { marginTop: 20, alignSelf: 'center' },
+  retryText: { color: '#555', fontSize: 12, textDecorationLine: 'underline', fontWeight: 'bold' },
   disclaimer: {
-    color: '#444',
+    color: '#333',
     fontSize: 11,
     textAlign: 'center',
     lineHeight: 18,
-    fontWeight: '600',
+    marginTop: 32,
+    fontWeight: '700',
   },
   successBlock: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80,
-    gap: 16,
+    paddingTop: 100,
+    gap: 24,
   },
   successTitle: {
     color: COLORS.success,
-    fontSize: 42,
+    fontSize: 28,
     fontWeight: '900',
-    letterSpacing: -1,
+    letterSpacing: 1,
   },
   successSub: {
     color: '#666',
@@ -306,6 +280,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '700',
     lineHeight: 22,
+    paddingHorizontal: 20,
   },
 });
 
