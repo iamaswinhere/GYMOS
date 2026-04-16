@@ -38,7 +38,7 @@ const DashboardScreen = ({ navigation }: any) => {
     }
 
     // Setup Real-time connection
-    const socket = io(API_URL);
+    const socket = io(API_URL.replace('/api', ''));
 
     socket.on('eventUpdate', (data: any) => {
       if (data.type === 'added') {
