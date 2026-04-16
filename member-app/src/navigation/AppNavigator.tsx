@@ -8,7 +8,6 @@ import { COLORS } from '../constants/theme';
 import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import AttendanceScannerScreen from '../screens/AttendanceScannerScreen';
-import AttendanceScannerScreen from '../screens/AttendanceScannerScreen';
 
 import StartupLoader from '../components/StartupLoader';
 
@@ -32,7 +31,6 @@ const AppNavigator = () => {
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
-        <Stack.Screen name="Scanner" component={AttendanceScannerScreen} />
         <Stack.Screen name="Scanner" component={AttendanceScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
