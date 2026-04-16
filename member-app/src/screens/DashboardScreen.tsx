@@ -100,10 +100,14 @@ const DashboardScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      document.body.appendChild(script);
+      const scriptId = 'razorpay-checkout-js';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
     }
   }, []);
 

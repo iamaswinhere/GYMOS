@@ -1,5 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, LogBox } from 'react-native';
+
+LogBox.ignoreLogs([
+  'Animated: `useNativeDriver`',
+]);
+
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const msg = args[0];
+  if (typeof msg === 'string' && msg.includes('checkout-static-next.razorpay.com')) return;
+  if (typeof msg === 'string' && msg.includes('useNativeDriver')) return;
+  originalWarn(...args);
+};
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { 
