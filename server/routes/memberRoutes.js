@@ -165,6 +165,7 @@ const { default: autoTable } = require("jspdf-autotable");
 
 // Renew membership (Admin Only or Token Protected)
 router.post('/renew/:id', auth, async (req, res) => {
+  console.log(`[Renewal API] Request received for member ID: ${req.params.id}`);
   try {
     const { durationMonths, amountPaid } = req.body;
     const member = await Member.findById(req.params.id);

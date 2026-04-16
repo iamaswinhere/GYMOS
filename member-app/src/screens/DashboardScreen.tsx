@@ -101,48 +101,67 @@ const DashboardScreen = ({ navigation }: any) => {
   const handleRenewMembership = async () => {
     const amount = member?.membershipPlan?.price ?? 1;
 
-    Alert.alert(
-      'Renew Membership',
-      `Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Confirm', 
-          onPress: async () => {
-            setRenewing(true);
-            try {
-              const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
-              });
+    const performRenewal = async () => {
+      setRenewing(true);
+      console.log(`[Renewal] Starting renewal for member ${member._id} with amount ${amount}`);
+      try {
+        const res = await fetch(`${API_URL}/api/members/renew/${member._id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ durationMonths: 1, amountPaid: amount }),
+        });
 
-              if (res.ok) {
-                const data = await res.json();
-                await refreshMember();
-                Alert.alert('Success', 'Membership renewed successfully for 1 month!');
-                
-                if (Platform.OS === 'web' && data.pdf) {
-                  const link = document.createElement('a');
-                  link.href = data.pdf;
-                  link.download = `GYMOS_Receipt.pdf`;
-                  link.click();
-                }
-              } else {
-                Alert.alert('Error', 'Could not renew membership.');
-              }
-            } catch (err) {
-              Alert.alert('Network Error', 'Please check your connection and try again.');
-            } finally {
-              setRenewing(false);
-            }
+        const data = await res.json();
+        console.log(`[Renewal] Server response:`, data);
+
+        if (res.ok) {
+          await refreshMember();
+          const msg = 'Membership renewed successfully for 1 month!';
+          if (Platform.OS === 'web') {
+            window.alert(msg);
+          } else {
+            Alert.alert('Success', msg);
           }
+          
+          if (Platform.OS === 'web' && data.pdf) {
+            const link = document.createElement('a');
+            link.href = data.pdf;
+            link.download = `GYMOS_Receipt.pdf`;
+            link.click();
+          }
+        } else {
+          const errMsg = data.message || 'Could not renew membership.';
+          console.error(`[Renewal] Failed:`, errMsg);
+          if (Platform.OS === 'web') window.alert('Error: ' + errMsg);
+          else Alert.alert('Error', errMsg);
         }
-      ]
-    );
+      } catch (err) {
+        console.error(`[Renewal] Network/Error:`, err);
+        const netMsg = 'Please check your connection and try again.';
+        if (Platform.OS === 'web') window.alert('Network Error: ' + netMsg);
+        else Alert.alert('Network Error', netMsg);
+      } finally {
+        setRenewing(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`)) {
+        performRenewal();
+      }
+    } else {
+      Alert.alert(
+        'Renew Membership',
+        `Simulating UPI Payment: Redirecting to UPI App (GPay/PhonePe). Press OK to simulate a successful payment of ${amount} INR.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Confirm', onPress: performRenewal }
+        ]
+      );
+    }
   };
 
   return (
