@@ -46,7 +46,7 @@ const PaymentScreen = ({ navigation }: any) => {
   const handleInitializePayment = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/razorpay/create-link`, {
+      const res = await fetch(`${API_URL}/api/razorpay/create-link`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
