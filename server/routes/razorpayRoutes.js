@@ -21,7 +21,7 @@ const getRazorpayInstance = () => {
 router.post('/create-link', auth, async (req, res) => {
     try {
         const durationMonths = req.body.durationMonths || 1;
-        const member = await Member.findById(req.user.id);
+        const member = await Member.findById(req.user);
 
         if (!member) return res.status(404).json({ message: "Member not found" });
 
