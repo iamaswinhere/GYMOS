@@ -28,12 +28,8 @@ const isGlobalAllowed = allowedOrigins.includes('*');
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || isGlobalAllowed || allowedOrigins.includes(origin) || (origin && origin.endsWith('vercel.app'))) {
-      callback(null, true);
-    } else {
-      // Return false to block, but don't pass an Error which causes a 500
-      callback(null, false);
-    }
+    // ALWAYS allow for testing and seamless mobile app integration
+    callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -58,11 +54,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      if (!origin || isGlobalAllowed || allowedOrigins.includes(origin) || (origin && origin.endsWith('vercel.app'))) {
-        callback(null, true);
-      } else {
-        callback(null, false);
-      }
+      // ALWAYS allow for testing and seamless mobile app integration
+      callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
