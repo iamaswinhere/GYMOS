@@ -24,10 +24,20 @@ const Footer = () => {
                 <div>
                     <h4 className="text-white font-bold mb-6">Quick Links</h4>
                     <ul className="space-y-4 text-gray-500">
-                        <li><a href="#hero" className="hover:text-primary transition-colors">Home</a></li>
-                        <li><a href="#about" className="hover:text-primary transition-colors">About Us</a></li>
-                        <li><a href="#equipments" className="hover:text-primary transition-colors">Equipments</a></li>
-                        <li><a href="#contact" className="hover:text-primary transition-colors">Contact</a></li>
+                        <li><a href="/#hero" className="hover:text-primary transition-colors">Home</a></li>
+                        <li><a href="/#about" className="hover:text-primary transition-colors">About Us</a></li>
+                        <li><a href="/#equipments" className="hover:text-primary transition-colors">Equipments</a></li>
+                        <li><a href="/#contact" className="hover:text-primary transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 className="text-white font-bold mb-6">Legal</h4>
+                    <ul className="space-y-4 text-gray-500">
+                        <li><a href="/terms-conditions" className="hover:text-primary transition-colors">Terms & Conditions</a></li>
+                        <li><a href="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</a></li>
+                        <li><a href="/refund-cancellation" className="hover:text-primary transition-colors">Refund & Cancellation</a></li>
+                        <li><a href="/shipping-delivery" className="hover:text-primary transition-colors">Shipping & Delivery</a></li>
                     </ul>
                 </div>
 
@@ -36,23 +46,24 @@ const Footer = () => {
                     <ul className="space-y-4">
                         <li className="flex gap-3 text-gray-500">
                              <Phone className="text-primary" size={18} />
-                             <span>+1 (234) 567-890</span>
+                             <span>+91 8921809791</span>
                         </li>
                         <li className="flex gap-3 text-gray-500">
                              <MessageSquare className="text-primary" size={18} />
-                             <a href="https://wa.me/1234567890" target="_blank" className="hover:text-primary underline">WhatsApp Support</a>
+                             <a href="https://wa.me/918921809791" target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">WhatsApp Support</a>
                         </li>
                     </ul>
                     <div className="mt-8">
-                         <button className="bg-[#212121] text-white py-3 px-6 rounded-xl border border-white/5 hover:border-primary/50 transition-all flex items-center gap-2">
+                         <a href="tel:+918921809791" className="bg-[#212121] text-white py-3 px-6 rounded-xl border border-white/5 hover:border-primary/50 transition-all inline-flex items-center gap-2">
                             <Phone size={18} /> Call Specialist
-                         </button>
+                         </a>
                     </div>
                 </div>
             </div>
             
-            <div className="container mx-auto px-6 border-t border-white/5 pt-10 text-center text-gray-600 text-sm">
-                <p>&copy; {new Date().getFullYear()} GYMOS. All rights reserved. Designed for elite athletes.</p>
+            <div className="container mx-auto px-6 border-t border-white/5 pt-10 flex flex-col md:flex-row items-center justify-between gap-4 text-gray-600 text-sm">
+                <p>&copy; 2026 GYMOS | Owned and Operated by AswinRaj</p>
+                <p>Designed for elite athletes.</p>
             </div>
         </footer>
     );

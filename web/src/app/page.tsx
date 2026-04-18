@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import EquipmentSection from '@/components/landing/EquipmentSection';
+import PricingSection from '@/components/landing/PricingSection';
 import ContactSection from '@/components/landing/ContactSection';
 import Footer from '@/components/landing/Footer';
 import FloatingActions from '@/components/landing/FloatingActions';
@@ -45,6 +46,8 @@ export default function Home() {
 
         <EquipmentSection />
         
+        <PricingSection />
+
         {/* Map Placeholder */}
         <section className="container mx-auto px-6 py-20">
              <div className="w-full h-[400px] glass-card overflow-hidden relative">

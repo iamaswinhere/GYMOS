@@ -37,7 +37,7 @@ const ContactSection = () => {
                             <div className="w-12 h-12 glass rounded-full flex items-center justify-center text-primary"><Mail size={20} /></div>
                             <div>
                                 <p className="text-sm text-gray-500">Email Us</p>
-                                <p className="font-bold">gym@gym.com</p>
+                                <p className="font-bold">support@gymos.in</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 text-gray-300">
