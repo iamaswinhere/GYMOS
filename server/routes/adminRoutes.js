@@ -64,4 +64,32 @@ router.put('/settings', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Update admin credentials
+router.put('/credentials', auth, adminOnly, async (req, res) => {
+  try {
+    const { currentPassword, newUsername, newPassword } = req.body;
+    
+    // req.user has the admin ID from auth middleware
+    const admin = await Admin.findById(req.user);
+    if (!admin) return res.status(404).json({ message: 'Admin not found' });
+    
+    const isMatch = await admin.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Incorrect current password' });
+    }
+    
+    if (newUsername) admin.username = newUsername;
+    if (newPassword) admin.password = newPassword;
+    
+    await admin.save();
+    
+    res.json({ message: 'Credentials updated successfully' });
+  } catch (error) {
+    if (error.code === 11000) {
+        return res.status(400).json({ message: 'Username already exists' });
+    }
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

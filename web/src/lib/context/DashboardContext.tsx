@@ -97,6 +97,7 @@ interface DashboardContextType extends DashboardState {
   clearNotifications: () => void;
   updateSettings: (settings: Partial<SiteSettings>) => Promise<void>;
   getMemberPayments: (memberId: string) => Promise<PaymentRecord[]>;
+  updateAdminCredentials: (data: any) => Promise<boolean>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -587,6 +588,23 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const updateAdminCredentials = async (data: any): Promise<boolean> => {
+    try {
+      const res = await authenticatedFetch(`${BASE_URL}/admin/credentials`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        return true;
+      }
+      const errData = await res.json();
+      throw new Error(errData.message || 'Credentials update failed');
+    } catch (error: any) {
+      alert(error.message);
+      return false;
+    }
+  };
+
   const setSearchQuery = (query: string) => {
     const lowerQuery = query.toLowerCase();
     let highlightedMonth = null;
@@ -658,7 +676,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       generateAIReport,
       clearNotifications,
       updateSettings,
-      getMemberPayments
+      getMemberPayments,
+      updateAdminCredentials
     }}>
       {children}
     </DashboardContext.Provider>
