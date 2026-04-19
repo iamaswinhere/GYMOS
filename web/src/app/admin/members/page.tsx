@@ -112,15 +112,27 @@ export default function MembersPage() {
     medicalConditions: ''
   });
 
-  // Derived amount based on plan and PT
   const calculateAmount = (plan: string, hasPT: boolean) => {
-    return 1;
+    let base = 0;
+    if (plan === 'Student') base = 799;
+    else if (plan === 'Monthly GYM') base = 999;
+    else if (plan === 'Quarterly') base = 2500;
+    else if (plan === 'Half-Yearly') base = 5000;
+    else if (plan === 'Yearly') base = 10000;
+    else base = 999;
+    
+    return base + (hasPT ? 4000 : 0);
   };
 
-  // Auto-calculate expiry: 1 month from now
-  const calculateExpiry = () => {
+  // Auto-calculate expiry based on plan duration
+  const calculateExpiry = (plan: string) => {
+    let months = 1;
+    if (plan === 'Quarterly') months = 3;
+    else if (plan === 'Half-Yearly') months = 6;
+    else if (plan === 'Yearly') months = 12;
+
     const date = new Date();
-    date.setMonth(date.getMonth() + 1);
+    date.setMonth(date.getMonth() + months);
     return date.toISOString().split('T')[0];
   };
 
@@ -218,7 +230,7 @@ export default function MembersPage() {
     e.preventDefault();
     const finalAmount = calculateAmount(formData.plan, formData.hasPT);
     const finalPlanName = `${formData.plan}${formData.hasPT ? ' + PT' : ''}`;
-    const finalExpiry = calculateExpiry();
+    const finalExpiry = calculateExpiry(formData.plan);
 
     if (editingMember) {
       updateMember(editingMember.id, {
@@ -502,8 +514,11 @@ export default function MembersPage() {
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Membership Plan</label>
                        <select value={formData.plan} onChange={(e) => setFormData({...formData, plan: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
-                          <option value="Monthly GYM">Regular GYM (₹1)</option>
-                          <option value="Student">Student Plan (₹1)</option>
+                          <option value="Student">Student (₹799)</option>
+                          <option value="Monthly GYM">Regular GYM (₹999)</option>
+                          <option value="Quarterly">Quarterly (₹2,500)</option>
+                          <option value="Half-Yearly">Half-Yearly (₹5,000)</option>
+                          <option value="Yearly">Yearly (₹10,000)</option>
                        </select>
                     </div>
                     <div className="space-y-2">
@@ -521,7 +536,7 @@ export default function MembersPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h4 className="text-white font-black uppercase text-sm italic">Personal Training (PT)</h4>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Additional expert guidance for ₹2000 extras</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Additional expert guidance for ₹4000 extras</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" checked={formData.hasPT} onChange={(e) => setFormData({...formData, hasPT: e.target.checked})} className="sr-only peer" />
@@ -575,7 +590,7 @@ export default function MembersPage() {
                     </div>
                     <div className="text-right">
                         <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Billing Period</p>
-                        <p className="text-sm font-black text-primary">1 MONTH</p>
+                        <p className="text-sm font-black text-primary">{formData.plan === 'Yearly' ? '12 MONTHS' : formData.plan === 'Half-Yearly' ? '6 MONTHS' : formData.plan === 'Quarterly' ? '3 MONTHS' : '1 MONTH'}</p>
                     </div>
                 </div>
                 
