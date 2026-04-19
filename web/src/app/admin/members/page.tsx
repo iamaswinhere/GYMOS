@@ -521,15 +521,14 @@ export default function MembersPage() {
                           <option value="Yearly">Yearly (₹10,000)</option>
                        </select>
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Current Status</label>
-                       <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
-                          <option value="active">Active</option>
-                          <option value="stopped">Stopped / Hold</option>
-                          <option value="pending">Pending Review</option>
-                          <option value="expired">Mark as Expired</option>
-                       </select>
-                    </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Current Status</label>
+                        <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
+                           <option value="active">Active</option>
+                           <option value="stopped">Stopped / Hold</option>
+                           <option value="expired">Mark as Expired</option>
+                        </select>
+                     </div>
                 </div>
 
                 <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 space-y-4">
