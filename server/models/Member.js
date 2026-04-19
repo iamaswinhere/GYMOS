@@ -19,7 +19,14 @@ const memberSchema = new mongoose.Schema({
   lastRenewalDate: { type: Date, default: Date.now },
   expiryDate: { type: Date, required: true },
   photoUrl: { type: String },
-  notes: { type: String }
+  notes: { type: String },
+  gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
+  address: { type: String },
+  emergencyContact: { type: String },
+  height: { type: Number },
+  weight: { type: Number },
+  bloodGroup: { type: String },
+  medicalConditions: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Member', memberSchema);

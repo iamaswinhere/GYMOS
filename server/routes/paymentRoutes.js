@@ -24,6 +24,16 @@ router.post('/add', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Get member specific payments (Admin or The Member)
+router.get('/member/:id', auth, async (req, res) => {
+  try {
+    const payments = await Payment.find({ memberId: req.params.id }).sort({ paymentDate: -1 });
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get income report (Dashboard) (Admin Only)
 router.get('/income-report', auth, adminOnly, async (req, res) => {
   try {

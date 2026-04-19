@@ -17,6 +17,26 @@ export interface Member {
   amount: number;
   date: string;
   createdAt?: string;
+  gender?: string;
+  address?: string;
+  emergencyContact?: string;
+  height?: number;
+  weight?: number;
+  bloodGroup?: string;
+  medicalConditions?: string;
+  dateOfBirth?: string;
+}
+
+export interface PaymentRecord {
+  _id: string;
+  memberId: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  transactionId?: string;
+  planName?: string;
+  status: string;
+  createdAt?: string;
 }
 
 export interface GymEvent {
@@ -76,6 +96,7 @@ interface DashboardContextType extends DashboardState {
   generateAIReport: () => void;
   clearNotifications: () => void;
   updateSettings: (settings: Partial<SiteSettings>) => Promise<void>;
+  getMemberPayments: (memberId: string) => Promise<PaymentRecord[]>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -162,7 +183,15 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         expiry: m.expiryDate ? new Date(m.expiryDate).toISOString().split('T')[0] : '',
         amount: m.membershipPlan?.price || 0,
         date: m.joiningDate ? new Date(m.joiningDate).toISOString().split('T')[0] : '',
-        createdAt: m.createdAt
+        createdAt: m.createdAt,
+        gender: m.gender,
+        address: m.address,
+        emergencyContact: m.emergencyContact,
+        height: m.height,
+        weight: m.weight,
+        bloodGroup: m.bloodGroup,
+        medicalConditions: m.medicalConditions,
+        dateOfBirth: m.dateOfBirth ? new Date(m.dateOfBirth).toISOString().split('T')[0] : undefined
       }));
 
       const validPaymentsData = Array.isArray(paymentsData) ? paymentsData : [];
@@ -344,28 +373,57 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const addMember = async (memberData: Omit<Member, 'id'>, skipNotifications: boolean = false) => {
+  const getMemberPayments = useCallback(async (memberId: string): Promise<PaymentRecord[]> => {
     try {
-      const payload = {
+      const res = await authenticatedFetch(`${BASE_URL}/payments/member/${memberId}`);
+      if (!res.ok) throw new Error("Failed to fetch payments");
+      return await res.json();
+    } catch (error) {
+      console.error("Error fetching member payments:", error);
+      return [];
+    }
+  }, [authenticatedFetch]);
+
+  const addMember = useCallback(async (memberData: Omit<Member, 'id'>, skipNotifications = false) => {
+    const isSignupUrl = window.location.pathname.includes('/member/signup');
+    const endpoint = isSignupUrl ? `${BASE_URL}/members/signup` : `${BASE_URL}/members/add`;
+    
+    let months = 1;
+    if (memberData.plan.toLowerCase().includes('year')) months = 12;
+    else if (memberData.plan.toLowerCase().includes('half')) months = 6;
+    else if (memberData.plan.toLowerCase().includes('quarter')) months = 3;
+
+    const token = state.token || localStorage.getItem('gymos_admin_token');
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (!isSignupUrl && token) headers['Authorization'] = `Bearer ${token}`;
+
+    const payload = {
         name: memberData.name,
         mobileNumber: memberData.number,
-        membershipStatus: memberData.status,
         membershipPlan: {
-          name: memberData.plan,
-          durationMonths: 1,
-          price: memberData.amount
+            name: memberData.plan,
+            durationMonths: months,
+            price: memberData.amount
         },
-        expiryDate: new Date(memberData.expiry)
-      };
+        membershipStatus: memberData.status,
+        dateOfBirth: memberData.dateOfBirth,
+        gender: memberData.gender,
+        address: memberData.address,
+        emergencyContact: memberData.emergencyContact,
+        height: memberData.height,
+        weight: memberData.weight,
+        bloodGroup: memberData.bloodGroup,
+        medicalConditions: memberData.medicalConditions
+    };
 
-      const res = await authenticatedFetch(`${BASE_URL}/members/add`, {
+    const res = await fetch(endpoint, {
         method: 'POST',
+        headers,
         body: JSON.stringify(payload)
-      });
-      
-      if (res.ok) {
+    });
+    
+    if (res.ok) {
         const savedMember = await res.json();
-        
         if (!skipNotifications) {
           const ownerNumber = '919567950284';
           const waMessage = encodeURIComponent(
@@ -380,11 +438,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           window.open(`https://wa.me/${ownerNumber}?text=${waMessage}`, '_blank');
           await fetchAllData();
         }
-      }
-    } catch (error) {
-       console.error("Add member failed", error);
     }
-  };
+  }, [state.token, fetchAllData]);
 
   const bulkImportMembers = async (membersList: Omit<Member, 'id'>[]) => {
     const payload = membersList.map(m => ({
@@ -414,29 +469,44 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return data as { inserted: number };
   };
 
-  const updateMember = async (id: string, memberData: Partial<Member>) => {
-    try {
-      const payload: any = { ...memberData };
-      if (memberData.number) payload.mobileNumber = memberData.number;
-      if (memberData.status) payload.membershipStatus = memberData.status;
-      if (memberData.expiry) payload.expiryDate = new Date(memberData.expiry);
-      if (memberData.plan || memberData.amount) {
+  const updateMember = useCallback(async (id: string, memberData: Partial<Member>) => {
+    const payload: any = {};
+    if (memberData.name) payload.name = memberData.name;
+    if (memberData.number) payload.mobileNumber = memberData.number;
+    if (memberData.status) payload.membershipStatus = memberData.status;
+    if (memberData.dateOfBirth) payload.dateOfBirth = memberData.dateOfBirth;
+    if (memberData.gender !== undefined) payload.gender = memberData.gender;
+    if (memberData.address !== undefined) payload.address = memberData.address;
+    if (memberData.emergencyContact !== undefined) payload.emergencyContact = memberData.emergencyContact;
+    if (memberData.height !== undefined) payload.height = memberData.height;
+    if (memberData.weight !== undefined) payload.weight = memberData.weight;
+    if (memberData.bloodGroup !== undefined) payload.bloodGroup = memberData.bloodGroup;
+    if (memberData.medicalConditions !== undefined) payload.medicalConditions = memberData.medicalConditions;
+    if (memberData.plan || memberData.amount) {
+        let months = 1;
+        if (memberData.plan) {
+            if (memberData.plan.toLowerCase().includes('year')) months = 12;
+            else if (memberData.plan.toLowerCase().includes('half')) months = 6;
+            else if (memberData.plan.toLowerCase().includes('quarter')) months = 3;
+        }
+        
         payload.membershipPlan = {
-           name: memberData.plan || 'Standard',
-           durationMonths: 1,
-           price: memberData.amount || 0
+            name: memberData.plan || 'Standard',
+            durationMonths: months,
+            price: memberData.amount || 0
         };
-      }
-
-      await authenticatedFetch(`${BASE_URL}/members/update/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(payload)
-      });
-      await fetchAllData();
-    } catch (error) {
-       console.error("Update member failed", error);
     }
-  };
+    
+    if (payload.membershipStatus === 'Suspended') payload.membershipStatus = 'stopped';
+    
+    const res = await authenticatedFetch(`${BASE_URL}/members/update/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      await fetchAllData();
+    }
+  }, [authenticatedFetch, fetchAllData]);
 
   const renewMember = async (id: string, months: number = 1) => {
     try {
@@ -448,7 +518,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (res.ok) {
         const data = await res.json();
         
-        // Auto-download PDF Receipt
         if (data.pdf) {
             const link = document.createElement('a');
             link.href = data.pdf;
@@ -588,7 +657,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSearchQuery, 
       generateAIReport,
       clearNotifications,
-      updateSettings
+      updateSettings,
+      getMemberPayments
     }}>
       {children}
     </DashboardContext.Provider>

@@ -18,12 +18,17 @@ import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MembersPage() {
-  const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData } = useDashboard();
+  const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData, getMemberPayments } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [processingRenew, setProcessingRenew] = useState<string | null>(null);
+  
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  const [viewingPayments, setViewingPayments] = useState<any[]>([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // CSV Export
@@ -91,13 +96,20 @@ export default function MembersPage() {
     reader.readAsText(file);
   };
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '',
     number: '',
     plan: 'Monthly GYM', // "Monthly GYM" or "Student"
     status: 'active' as Member['status'],
-    hasPT: false
+    hasPT: false,
+    gender: 'male',
+    dateOfBirth: '',
+    address: '',
+    emergencyContact: '',
+    height: '',
+    weight: '',
+    bloodGroup: '',
+    medicalConditions: ''
   });
 
   // Derived amount based on plan and PT
@@ -137,12 +149,23 @@ export default function MembersPage() {
   const handleOpenModal = (member?: Member) => {
     if (member) {
       setEditingMember(member);
+      const isPT = member.plan.includes('+ PT');
+      const basePlan = member.plan.replace(' + PT', '');
+      
       setFormData({
         name: member.name,
         number: member.number,
-        plan: member.plan.includes('Student') ? 'Student' : 'Monthly GYM',
+        plan: basePlan,
         status: member.status,
-        hasPT: member.plan.includes('PT')
+        hasPT: isPT,
+        gender: member.gender || 'male',
+        dateOfBirth: member.dateOfBirth || '',
+        address: member.address || '',
+        emergencyContact: member.emergencyContact || '',
+        height: member.height ? String(member.height) : '',
+        weight: member.weight ? String(member.weight) : '',
+        bloodGroup: member.bloodGroup || '',
+        medicalConditions: member.medicalConditions || ''
       });
     } else {
       setEditingMember(null);
@@ -151,10 +174,32 @@ export default function MembersPage() {
         number: '',
         plan: 'Monthly GYM',
         status: 'active',
-        hasPT: false
+        hasPT: false,
+        gender: 'male',
+        dateOfBirth: '',
+        address: '',
+        emergencyContact: '',
+        height: '',
+        weight: '',
+        bloodGroup: '',
+        medicalConditions: ''
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleViewMember = async (member: Member) => {
+    setViewingMember(member);
+    setIsLoadingPayments(true);
+    try {
+      const payments = await getMemberPayments(member.id);
+      setViewingPayments(payments);
+    } catch (e) {
+      console.error(e);
+      setViewingPayments([]);
+    } finally {
+      setIsLoadingPayments(false);
+    }
   };
 
   const handleRenew = async (member: Member) => {
@@ -182,7 +227,15 @@ export default function MembersPage() {
         plan: finalPlanName,
         status: formData.status,
         amount: finalAmount,
-        expiry: finalExpiry 
+        expiry: finalExpiry,
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth,
+        address: formData.address,
+        emergencyContact: formData.emergencyContact,
+        bloodGroup: formData.bloodGroup,
+        medicalConditions: formData.medicalConditions,
+        height: formData.height ? parseFloat(formData.height) : undefined,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined
       });
     } else {
       addMember({
@@ -192,7 +245,15 @@ export default function MembersPage() {
         status: formData.status,
         amount: finalAmount,
         expiry: finalExpiry,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth,
+        address: formData.address,
+        emergencyContact: formData.emergencyContact,
+        bloodGroup: formData.bloodGroup,
+        medicalConditions: formData.medicalConditions,
+        height: formData.height ? parseFloat(formData.height) : undefined,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined
       });
       localStorage.removeItem('gymos_form_draft_v2');
     }
@@ -293,7 +354,7 @@ export default function MembersPage() {
                 </tr>
               ) : (
                 filteredMembers.map((member) => (
-                    <tr key={member.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <tr key={member.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => handleViewMember(member)}>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary font-black uppercase text-xs group-hover:border-primary/50 transition-all">
@@ -318,7 +379,7 @@ export default function MembersPage() {
                       <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button 
-                            onClick={() => handleRenew(member)} 
+                            onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
                             disabled={!!processingRenew}
                             className={`p-2.5 bg-white/5 rounded-xl text-gray-500 transition-all ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
                             title="Extend 1 Month"
@@ -329,10 +390,10 @@ export default function MembersPage() {
                                 <RefreshCw size={18} />
                             )}
                           </button>
-                          <button onClick={() => handleOpenModal(member)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Profile">
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenModal(member); }} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Profile">
                             <Edit2 size={18} />
                           </button>
-                          <button onClick={() => setMemberToDelete(member)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Delete record">
+                          <button onClick={(e) => { e.stopPropagation(); setMemberToDelete(member); }} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition-all" title="Delete record">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -354,7 +415,7 @@ export default function MembersPage() {
           </div>
         ) : (
           filteredMembers.map((member) => (
-            <div key={member.id} className="bg-[#0D0D0D] border border-white/5 rounded-[32px] p-6 flex flex-col gap-6 relative overflow-hidden group">
+            <div key={member.id} className="bg-[#0D0D0D] border border-white/5 rounded-[32px] p-6 flex flex-col gap-6 relative overflow-hidden group cursor-pointer" onClick={() => handleViewMember(member)}>
               <div className="flex items-start justify-between relative z-10">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-primary font-black uppercase text-sm">
@@ -388,7 +449,7 @@ export default function MembersPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
-                    onClick={() => handleRenew(member)} 
+                    onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
                     disabled={!!processingRenew}
                     className={`p-3 bg-white/5 rounded-xl text-gray-400 transition-all border border-white/5 ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
                     title="Renew"
@@ -399,10 +460,10 @@ export default function MembersPage() {
                         <RefreshCw size={18} />
                     )}
                   </button>
-                  <button onClick={() => handleOpenModal(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/10 transition-all border border-white/5" title="Edit">
+                  <button onClick={(e) => { e.stopPropagation(); handleOpenModal(member); }} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/10 transition-all border border-white/5" title="Edit">
                     <Edit2 size={18} />
                   </button>
-                  <button onClick={() => setMemberToDelete(member)} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all border border-white/5" title="Delete">
+                  <button onClick={(e) => { e.stopPropagation(); setMemberToDelete(member); }} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all border border-white/5" title="Delete">
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -469,6 +530,44 @@ export default function MembersPage() {
                     </div>
                 </div>
 
+                <div className="grid md:grid-cols-2 gap-8 border-t border-white/10 pt-8 mt-8">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Gender</label>
+                       <select value={formData.gender} onChange={(e) => setFormData({...formData, gender: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                       </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Emergency Contact</label>
+                       <input type="text" placeholder="+91 XXXX XXXX" value={formData.emergencyContact} onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Residential Address</label>
+                       <textarea placeholder="Enter full address..." value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800 min-h-[100px]"></textarea>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8 border-t border-white/10 pt-8 mt-8">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Height (cm)</label>
+                       <input type="number" placeholder="175" value={formData.height} onChange={(e) => setFormData({...formData, height: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Weight (kg)</label>
+                       <input type="number" placeholder="70" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Blood Group</label>
+                       <input type="text" placeholder="O+" value={formData.bloodGroup} onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Medical Conditions</label>
+                       <input type="text" placeholder="Asthma, Diabetes, None..." value={formData.medicalConditions} onChange={(e) => setFormData({...formData, medicalConditions: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
+                    </div>
+                </div>
+
                 <div className="p-6 bg-[#050505] rounded-3xl border border-white/5 flex items-center justify-between">
                     <div>
                         <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Total Fee Amount</p>
@@ -513,6 +612,150 @@ export default function MembersPage() {
                   <button onClick={() => setMemberToDelete(null)} className="w-full bg-white/5 text-gray-500 font-black py-4 rounded-2xl hover:bg-white/10 transition-all text-sm tracking-widest uppercase">
                     Cancel
                   </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {/* View Member Profile & Payments Modal */}
+        {viewingMember && (
+          <div className="fixed inset-0 z-[100] flex justify-end p-0 md:p-6 bg-black/80 backdrop-blur-sm sm:items-start" onClick={() => setViewingMember(null)}>
+            <motion.div 
+              initial={{ x: '100%', opacity: 0 }} 
+              animate={{ x: 0, opacity: 1 }} 
+              exit={{ x: '100%', opacity: 0 }} 
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#0A0A0A] border-l border-white/10 md:rounded-3xl w-full max-w-2xl h-full md:h-auto md:max-h-[90vh] shadow-2xl flex flex-col relative"
+            >
+              <div className="absolute top-0 right-0 p-6 z-10">
+                  <button onClick={() => setViewingMember(null)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all"><X size={24}/></button>
+              </div>
+
+              {/* Header */}
+              <div className="p-8 border-b border-white/5">
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-transparent border border-primary/30 flex items-center justify-center text-primary font-black uppercase text-3xl shadow-[0_0_30px_rgba(255,196,0,0.15)]">
+                    {viewingMember.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase">{viewingMember.name}</h2>
+                    <div className="flex items-center gap-3 mt-2">
+                       <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${getStatusColor(viewingMember.status)}`}>
+                         {viewingMember.status}
+                       </span>
+                       <span className="text-sm font-bold text-gray-500">{viewingMember.number}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                
+                {/* Profile Data */}
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><UserCheck size={16} className="text-primary"/> Profile Details</h3>
+                  <div className="grid grid-cols-2 map-gap-4 gap-y-6 bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Gender</p>
+                       <p className="text-sm font-black text-gray-300 capitalize">{viewingMember.gender || '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Date of Birth</p>
+                       <p className="text-sm font-black text-gray-300">{viewingMember.dateOfBirth || '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Emergency Contact</p>
+                       <p className="text-sm font-black text-gray-300">{viewingMember.emergencyContact || '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Address</p>
+                       <p className="text-sm font-black text-gray-300 truncate">{viewingMember.address || '-'}</p>
+                     </div>
+                  </div>
+                </div>
+
+                {/* Body Metrics */}
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Zap size={16} className="text-primary"/> Physical Metrics</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-6">
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Height</p>
+                       <p className="text-sm font-black text-primary">{viewingMember.height ? `${viewingMember.height} cm` : '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Weight</p>
+                       <p className="text-sm font-black text-primary">{viewingMember.weight ? `${viewingMember.weight} kg` : '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Blood</p>
+                       <p className="text-sm font-black text-red-500">{viewingMember.bloodGroup || '-'}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] text-gray-600 font-black uppercase tracking-widest mb-1">Medical</p>
+                       <p className="text-xs font-bold text-gray-400 truncate" title={viewingMember.medicalConditions}>{viewingMember.medicalConditions || '-'}</p>
+                     </div>
+                  </div>
+                </div>
+
+                {/* Membership Plan */}
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><AlertTriangle size={16} className="text-primary"/> Membership</h3>
+                  <div className="bg-[#121212] border border-primary/20 rounded-2xl p-6 relative overflow-hidden">
+                     <div className="flex justify-between items-end relative z-10">
+                        <div>
+                           <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Current Plan</p>
+                           <p className="text-lg font-black text-white uppercase italic">{viewingMember.plan}</p>
+                        </div>
+                        <div className="text-right">
+                           <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Valid Until</p>
+                           <p className="text-lg font-black text-primary">{new Date(viewingMember.expiry).toLocaleDateString()}</p>
+                        </div>
+                     </div>
+                     <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-primary/10 blur-2xl rounded-full"></div>
+                  </div>
+                </div>
+
+                {/* Payment History */}
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4">Payment Ledger</h3>
+                  <div className="bg-[#050505] border border-white/5 rounded-2xl overflow-hidden">
+                     {isLoadingPayments ? (
+                        <div className="p-8 text-center"><div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto"></div></div>
+                     ) : viewingPayments.length === 0 ? (
+                        <div className="p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-widest">No payment records found.</div>
+                     ) : (
+                        <table className="w-full text-left">
+                           <thead className="bg-white/[0.02] border-b border-white/5">
+                             <tr>
+                               <th className="px-4 py-3 text-[9px] font-black text-gray-600 uppercase tracking-widest">Date</th>
+                               <th className="px-4 py-3 text-[9px] font-black text-gray-600 uppercase tracking-widest">Amount</th>
+                               <th className="px-4 py-3 text-[9px] font-black text-gray-600 uppercase tracking-widest">Method</th>
+                               <th className="px-4 py-3 text-[9px] font-black text-gray-600 uppercase tracking-widest">Status</th>
+                             </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                              {viewingPayments.map(payment => (
+                                 <tr key={payment._id}>
+                                    <td className="px-4 py-3 text-xs text-gray-400 font-bold">{new Date(payment.paymentDate || Math.random() * 1000).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3 text-xs text-primary font-black">₹{payment.amount.toLocaleString()}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-400 uppercase font-bold">{payment.paymentMethod || 'Cash'}</td>
+                                    <td className="px-4 py-3">
+                                       <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${payment.status === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                                          {payment.status || 'success'}
+                                       </span>
+                                    </td>
+                                 </tr>
+                              ))}
+                           </tbody>
+                        </table>
+                     )}
+                  </div>
+                </div>
+
               </div>
             </motion.div>
           </div>
