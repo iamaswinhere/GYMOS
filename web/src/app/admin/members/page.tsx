@@ -96,7 +96,7 @@ export default function MembersPage() {
     name: '',
     number: '',
     plan: 'Monthly GYM', // "Monthly GYM" or "Student"
-    status: 'active' as 'active' | 'expired' | 'stopped',
+    status: 'active' as Member['status'],
     hasPT: false
   });
 
@@ -211,6 +211,7 @@ export default function MembersPage() {
       case 'active': return 'bg-green-500/10 text-green-500 border-green-500/20';
       case 'expired': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
       case 'stopped': return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'pending': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
       default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
   };
@@ -449,6 +450,8 @@ export default function MembersPage() {
                        <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as any})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
                           <option value="active">Active</option>
                           <option value="stopped">Stopped / Hold</option>
+                          <option value="pending">Pending Review</option>
+                          <option value="expired">Mark as Expired</option>
                        </select>
                     </div>
                 </div>
