@@ -12,7 +12,8 @@ import {
   Edit2,
   Calendar,
   ArrowUpRight,
-  Activity
+  Activity,
+  X
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -286,8 +287,8 @@ const Dashboard = () => {
                 <button onClick={() => setViewType('monthly')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${viewType === 'monthly' ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-gray-500 hover:text-white'}`}>Monthly</button>
             </div>
           </div>
-          <div className="h-[250px] md:h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[250px] md:h-[350px] w-full min-w-0">
+            <ResponsiveContainer width="99%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
