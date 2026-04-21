@@ -4,16 +4,14 @@ import {
   Users, 
   TrendingUp, 
   Zap, 
-  Plus, 
-  Sparkles,
-  Search,
-  ChevronRight,
-  User as UserIcon,
   Edit2,
   Calendar,
   ArrowUpRight,
   Activity,
-  X
+  X,
+  Search,
+  Sparkles,
+  User as UserIcon
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -62,40 +60,9 @@ const Dashboard = () => {
   } = useDashboard();
 
   const router = useRouter();
-  const [showAddMember, setShowAddMember] = useState(false);
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberPhone, setNewMemberPhone] = useState('');
-  const [newMemberPlan, setNewMemberPlan] = useState('Monthly GYM');
-  const [hasPT, setHasPT] = useState(false);
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('monthly');
 
-  const calculateAmount = (plan: string, pt: boolean) => {
-    let base = 999; // Standard "Monthly GYM" or default
-    if (plan === 'Monthly GYM') base = 999;
-    return base + (pt ? 4000 : 0);
-  };
 
-  const calculateExpiry = () => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().split('T')[0];
-  };
-
-  // Draft persistence for Dashboard Quick Signup
-  useEffect(() => {
-    if (!showAddMember) return;
-    const draftName = localStorage.getItem('gymos_quick_draft_name_v2');
-    const draftPhone = localStorage.getItem('gymos_quick_draft_phone_v2');
-    if (draftName) setNewMemberName(draftName);
-    if (draftPhone) setNewMemberPhone(draftPhone);
-  }, [showAddMember]);
-
-  useEffect(() => {
-    if (showAddMember) {
-      localStorage.setItem('gymos_quick_draft_name_v2', newMemberName);
-      localStorage.setItem('gymos_quick_draft_phone_v2', newMemberPhone);
-    }
-  }, [newMemberName, newMemberPhone, showAddMember]);
 
   // Handle Search-based view toggle
   useEffect(() => {
@@ -143,31 +110,7 @@ const Dashboard = () => {
     { label: 'Gym Traffic', value: `${gymTraffic}%`, icon: Zap, color: 'from-purple-500/20 to-purple-600/5', isTraffic: true },
   ];
 
-  const handleAddMemberSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMemberName) return;
-    
-    const amount = calculateAmount(newMemberPlan, hasPT);
-    const planName = `${newMemberPlan}${hasPT ? ' + PT' : ''}`;
-    
-    addMember({
-      name: newMemberName,
-      number: newMemberPhone || "+91 0000000000",
-      plan: planName,
-      status: 'active',
-      expiry: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
-      amount: amount,
-      date: new Date().toISOString().split('T')[0]
-    });
 
-    setNewMemberName('');
-    setNewMemberPhone('');
-    setNewMemberPlan('Monthly GYM');
-    setHasPT(false);
-    localStorage.removeItem('gymos_quick_draft_name_v2');
-    localStorage.removeItem('gymos_quick_draft_phone_v2');
-    setShowAddMember(false);
-  };
 
   if (isLoading) {
     return (
@@ -245,12 +188,6 @@ const Dashboard = () => {
                 className="bg-white/5 border border-white/10 text-white px-6 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-white/10 active:scale-[0.98] transition-all group uppercase tracking-widest text-xs"
             >
                 <Zap size={18} strokeWidth={4} className="group-hover:text-primary transition-colors animate-pulse" /> Kiosk
-            </button>
-            <button 
-                onClick={() => setShowAddMember(true)}
-                className="bg-primary text-black px-6 py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(255,196,0,0.3)] group uppercase tracking-widest text-xs"
-            >
-                <Plus size={18} strokeWidth={4} className="group-hover:rotate-90 transition-transform" /> Quick Signup
             </button>
         </div>
       </div>
@@ -384,62 +321,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showAddMember && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-black/95 backdrop-blur-xl">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-[#0D0D0D] border border-white/10 rounded-[30px] md:rounded-[40px] p-6 md:p-10 w-full max-w-md shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 blur-[80px] rounded-full"></div>
-              <div className="flex justify-between items-center mb-8 md:mb-10 relative">
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase italic">Quick <span className="text-primary">SIGNUP</span></h2>
-                    <p className="text-[9px] text-gray-500 font-black uppercase tracking-widest mt-1">Automatic 1-Month Plan</p>
-                  </div>
-                  <button onClick={() => setShowAddMember(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all"><X size={20} /></button>
-              </div>
-              <form onSubmit={handleAddMemberSubmit} className="space-y-4 md:space-y-5 relative">
-                <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-gray-600 uppercase ml-2 tracking-widest">Full Name</label>
-                   <input type="text" placeholder="e.g. Rahul Sharma" value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} className="w-full bg-[#121212] border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800 text-sm" required />
-                </div>
-                <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-gray-600 uppercase ml-2 tracking-widest">Phone Number</label>
-                   <input type="text" placeholder="+91 80000 00000" value={newMemberPhone} onChange={(e) => setNewMemberPhone(e.target.value)} className="w-full bg-[#121212] border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800 text-sm" required />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-600 uppercase ml-2 tracking-widest">Plan</label>
-                        <select value={newMemberPlan} onChange={(e) => setNewMemberPlan(e.target.value)} className="w-full bg-[#121212] border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer text-sm">
-                            <option value="Monthly GYM">Regular (₹1)</option>
-                            <option value="Student">Student (₹1)</option>
-                        </select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[9px] font-black text-gray-600 uppercase ml-2 tracking-widest">PT Option (+₹2k)</label>
-                        <button type="button" onClick={() => setHasPT(!hasPT)} className={`w-full border rounded-2xl px-5 py-4 font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${hasPT ? 'bg-primary text-black border-primary' : 'bg-[#121212] text-gray-500 border-white/5 hover:border-white/20'}`}>
-                            {hasPT ? <Check size={14} strokeWidth={4} /> : null} Personal Trainer
-                        </button>
-                    </div>
-                </div>
-                
-                <div className="p-5 bg-black/40 rounded-3xl border border-white/5 flex items-center justify-between mt-4">
-                    <div>
-                        <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Grand Total</p>
-                        <p className="text-2xl font-black text-white italic">₹{calculateAmount(newMemberPlan, hasPT).toLocaleString()}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[9px] font-black text-primary uppercase tracking-widest italic animate-pulse">1 Month Access</p>
-                    </div>
-                </div>
- 
-                <div className="flex gap-3 pt-6">
-                  <button type="button" onClick={() => setShowAddMember(false)} className="flex-1 bg-white/5 text-white/50 font-black py-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all text-[10px] uppercase tracking-widest">Discard</button>
-                  <button type="submit" className="flex-1 bg-primary text-black font-black py-4 rounded-2xl shadow-[0_10px_30px_rgba(255,196,0,0.2)] hover:scale-[1.02] transition-all text-[10px] uppercase tracking-widest">Register & Pay</button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
     </div>
   );
 };
