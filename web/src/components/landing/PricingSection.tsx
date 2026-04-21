@@ -44,6 +44,12 @@ const PricingSection = () => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate(50);
     }
+    
+    // Dispatch custom event for cross-component communication
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gymos-plan-selected', { detail: planName }));
+    }
+
     // Scroll to contact form
     const contactSection = document.getElementById('contact');
     if (contactSection) {

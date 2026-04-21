@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 
 const ContactSection = () => {
@@ -9,8 +9,28 @@ const ContactSection = () => {
         phone: '',
         message: ''
     });
-
     const phoneNumber = "8921809791";
+
+    useEffect(() => {
+        const handlePlanSelected = (e: any) => {
+            setFormData(prev => ({
+                ...prev,
+                message: `I am interested in joining the ${e.detail} plan. Please provide me with more details on how to get started!`
+            }));
+            
+            // Subtle flash effect on message box to indicate auto-fill
+            const messageBox = document.getElementById('contact-message');
+            if (messageBox) {
+                messageBox.classList.add('ring-2', 'ring-primary');
+                setTimeout(() => {
+                    messageBox.classList.remove('ring-2', 'ring-primary');
+                }, 1000);
+            }
+        };
+
+        window.addEventListener('gymos-plan-selected', handlePlanSelected);
+        return () => window.removeEventListener('gymos-plan-selected', handlePlanSelected);
+    }, []);
 
     const handleWhatsAppRedirect = (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,12 +99,13 @@ const ContactSection = () => {
                             className="w-full bg-black/50 border border-white/10 rounded-lg p-4 focus:border-primary outline-none transition-colors text-white" 
                         />
                         <textarea 
+                            id="contact-message"
                             placeholder="How can we help?" 
                             rows={4} 
                             required
                             value={formData.message}
                             onChange={(e) => setFormData({...formData, message: e.target.value})}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg p-4 focus:border-primary outline-none transition-colors resize-none text-white"
+                            className="w-full bg-black/50 border border-white/10 rounded-lg p-4 focus:border-primary outline-none transition-all resize-none text-white"
                         ></textarea>
                         <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
                             Send to WhatsApp <Send size={18} />
