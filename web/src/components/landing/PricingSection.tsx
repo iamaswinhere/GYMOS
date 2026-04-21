@@ -4,18 +4,6 @@ import { Check, Star, Zap, Crown } from 'lucide-react';
 
 const pricingPlans = [
   {
-    name: "STUDENT PASS",
-    price: "799",
-    icon: <Zap className="text-primary mb-4" size={32} />,
-    popular: false,
-    billing: "per month",
-    features: [
-      "Access to standard equipment",
-      "Free group classes",
-      "Valid Student ID required"
-    ]
-  },
-  {
     name: "REGULAR MONTHLY",
     price: "999",
     icon: <Star className="text-primary mb-4" size={32} />,
@@ -46,28 +34,6 @@ const pricingPlans = [
     features: [
       "Save ₹994 instantly",
       "1 free dietary consultation"
-    ]
-  },
-  {
-    name: "YEARLY TITAN",
-    price: "10,000",
-    icon: <Crown className="text-primary mb-4" size={32} />,
-    popular: false,
-    billing: "per year",
-    features: [
-      "Save ₹1988 instantly",
-      "Free GYMOS merchandise"
-    ]
-  },
-  {
-    name: "PERSONAL TRAINING",
-    price: "+4,000",
-    icon: <Crown className="text-primary mb-4" size={32} />,
-    popular: false,
-    billing: "per month (Add-on)",
-    features: [
-      "1-on-1 Dedicated Coach",
-      "Customized nutrition & diet guide"
     ]
   }
 ];
