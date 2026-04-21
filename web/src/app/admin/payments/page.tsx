@@ -11,6 +11,26 @@ export default function PaymentsPage() {
   const pendingFees = members.filter(m => m.status === 'expired').length * 2500; // Mock calculation for pending
   const stoppedRevenue = members.filter(m => m.status === 'stopped').length * 2500;
 
+  const handleExportFinancials = () => {
+    const header = ['Payer Name', 'Payment Date', 'Plan Type', 'Amount Paid', 'Status'];
+    const rows = members.map(m => [
+        `"${m.name.replace(/"/g, '""')}"`, 
+        `"${m.date}"`, 
+        `"${m.plan}"`, 
+        m.amount, 
+        `"Completed"`
+    ]);
+    const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `gymos_financials_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex justify-between items-start">
@@ -18,7 +38,7 @@ export default function PaymentsPage() {
           <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">Payment <span className="text-primary italic">Tracking</span></h1>
           <p className="text-gray-500 text-sm uppercase tracking-widest font-bold">Financial Analytics & Revenue Stream</p>
         </div>
-        <button className="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/10 transition-all">
+        <button onClick={handleExportFinancials} className="bg-white/5 border border-white/10 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-white/10 transition-all">
           <Download size={20} /> Export Financials
         </button>
       </div>
