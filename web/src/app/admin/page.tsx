@@ -70,7 +70,9 @@ const Dashboard = () => {
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('monthly');
 
   const calculateAmount = (plan: string, pt: boolean) => {
-    return 1;
+    let base = 999; // Standard "Monthly GYM" or default
+    if (plan === 'Monthly GYM') base = 999;
+    return base + (pt ? 4000 : 0);
   };
 
   const calculateExpiry = () => {
@@ -235,7 +237,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase transition-all italic">GYM <span className="text-primary">DASHBOARD</span></h1>
-          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Standard Price ₹1</p>
+          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Standard Price ₹999</p>
         </div>
         <div className="flex gap-2">
             <button 
