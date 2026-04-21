@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function MembersPage() {
   const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData, getMemberPayments } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
@@ -153,10 +154,11 @@ export default function MembersPage() {
     }
   }, [formData, isModalOpen, editingMember]);
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.number.includes(searchTerm)
-  );
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.number.includes(searchTerm);
+    if (statusFilter === "all") return matchesSearch;
+    return matchesSearch && m.status === statusFilter;
+  });
 
   const handleOpenModal = (member?: Member) => {
     if (member) {
@@ -343,6 +345,17 @@ export default function MembersPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
               />
           </div>
+          <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-[#121212] border border-white/5 rounded-2xl px-5 py-3 text-white font-black uppercase text-xs tracking-widest cursor-pointer outline-none focus:border-primary/50 transition-colors w-full md:w-auto"
+          >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Members</option>
+              <option value="expired">Expired Members</option>
+              <option value="pending">Pending Members</option>
+              <option value="stopped">Stopped Members</option>
+          </select>
       </div>
 
       {/* Desktop Members Table */}
