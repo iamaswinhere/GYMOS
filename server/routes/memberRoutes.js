@@ -188,7 +188,7 @@ router.post('/renew/:id', auth, async (req, res) => {
     const newPayment = new Payment({
       memberId: member._id,
       amount: amountPaid || member.membershipPlan.price,
-      paymentMethod: 'online',
+      paymentMethod: 'Offline',
       planName: member.membershipPlan.name,
       status: 'success'
     });
