@@ -22,7 +22,9 @@ export default function KioskPage() {
       const istDate = new Date(now.getTime() + istOffset);
       
       const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
-      setToken(btoa(`gymos_secure_${dateString}`));
+      
+      // Static token for physical printing
+      setToken(btoa(`gymos_static_qr_checkin_token_v1`));
 
       // Generate the alternative 6-digit PIN code
       const encoder = new TextEncoder();
@@ -112,7 +114,7 @@ export default function KioskPage() {
         <div className="flex flex-col items-center mt-12 space-y-4">
             <p className="text-gray-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                 <ShieldCheck className="text-green-500" size={18} />
-                Secure Auto-Rotating Token
+                Static QR For Physical Print
             </p>
 
             <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl flex flex-col items-center mt-4 w-full">
