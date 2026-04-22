@@ -107,7 +107,6 @@ const Dashboard = () => {
     { label: 'Total Revenue', value: `₹${revenue.toLocaleString()}`, icon: TrendingUp, color: 'from-blue-500/20 to-blue-600/5' },
     { label: 'Active Members', value: activeMembers.toLocaleString(), icon: Users, color: 'from-primary/20 to-primary/5' },
     { label: 'New Signups', value: newMemberships.toLocaleString(), icon: TrendingUp, color: 'from-green-500/20 to-green-600/5' },
-    { label: 'Gym Traffic', value: `${gymTraffic}%`, icon: Zap, color: 'from-purple-500/20 to-purple-600/5', isTraffic: true },
   ];
 
 
@@ -192,7 +191,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
         {stats.map((stat, i) => (
           <div key={i} className={`dashboard-card relative overflow-hidden group border-white/5 bg-[#0D0D0D] p-5 md:p-6`}>
              <div className="relative z-10 flex justify-between items-start">

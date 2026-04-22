@@ -10,7 +10,7 @@ const paymentSchema = new mongoose.Schema({
   paymentDate: { type: Date, default: Date.now },
   paymentMethod: { 
     type: String, 
-    enum: ['cash', 'online', 'card'], 
+    enum: ['cash', 'online', 'card', 'Offline', 'offline'], 
     default: 'cash' 
   },
   transactionId: { type: String },
