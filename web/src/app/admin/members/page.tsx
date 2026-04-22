@@ -353,7 +353,6 @@ export default function MembersPage() {
               <option value="all">All Statuses</option>
               <option value="active">Active Members</option>
               <option value="expired">Expired Members</option>
-              <option value="pending">Pending Members</option>
               <option value="stopped">Stopped Members</option>
           </select>
       </div>
