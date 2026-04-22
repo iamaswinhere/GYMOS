@@ -81,11 +81,6 @@ export default function PaymentsPage() {
       <div className="dashboard-card !p-0">
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
             <h3 className="text-lg font-black text-white uppercase tracking-tighter">Transition History</h3>
-            <div className="flex gap-2">
-               <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all flex items-center gap-2">
-                 <Filter size={14} /> Filter
-               </button>
-            </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
