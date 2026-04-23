@@ -179,7 +179,7 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter uppercase transition-all italic">GYM <span className="text-primary">DASHBOARD</span></h1>
-          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Standard Price ₹999</p>
+          <p className="text-gray-500 font-medium mt-1 uppercase text-[10px] tracking-widest">Standard Price ₹1000</p>
         </div>
         <div className="flex gap-2">
             <button 

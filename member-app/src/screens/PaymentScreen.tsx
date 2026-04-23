@@ -24,7 +24,7 @@ const PaymentScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
 
-  const amount = member?.membershipPlan?.price ?? 1;
+  const amount = member?.membershipPlan?.price ?? 1000;
 
   // Listen for real-time payment success via WebSockets
   useEffect(() => {

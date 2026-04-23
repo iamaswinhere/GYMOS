@@ -5,7 +5,7 @@ import { Check, Star, Zap, Crown } from 'lucide-react';
 const pricingPlans = [
   {
     name: "REGULAR MONTHLY",
-    price: "999",
+    price: "1,000",
     icon: <Star className="text-primary mb-4" size={32} />,
     popular: false,
     billing: "per month",

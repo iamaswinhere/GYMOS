@@ -10,18 +10,42 @@ async function updateDb() {
     console.log('Connected!');
 
     console.log('Updating Members...');
-    const memberUpdate = await Member.updateMany(
-      {},
-      { $set: { 'membershipPlan.price': 1 } }
-    );
-    console.log(`Updated ${memberUpdate.modifiedCount} members.`);
+    const members = await Member.find({});
+    let memberUpdates = 0;
+    for (let m of members) {
+      let base = 1000;
+      let p = m.membershipPlan?.name || '';
+      if (p.includes('Student')) base = 800;
+      else if (p.includes('Quarterly')) base = 2500;
+      else if (p.includes('Half-Yearly')) base = 5000;
+      else if (p.includes('Yearly')) base = 10000;
+      
+      if (p.includes('+ PT')) base += 2000;
+      
+      m.membershipPlan.price = base;
+      await m.save();
+      memberUpdates++;
+    }
+    console.log(`Updated ${memberUpdates} members.`);
 
     console.log('Updating Payments...');
-    const paymentUpdate = await Payment.updateMany(
-      {},
-      { $set: { amount: 1 } }
-    );
-    console.log(`Updated ${paymentUpdate.modifiedCount} payments.`);
+    const payments = await Payment.find({});
+    let paymentUpdates = 0;
+    for (let py of payments) {
+      let base = 1000;
+      let p = py.plan || '';
+      if (p.includes('Student')) base = 800;
+      else if (p.includes('Quarterly')) base = 2500;
+      else if (p.includes('Half-Yearly')) base = 5000;
+      else if (p.includes('Yearly')) base = 10000;
+      
+      if (p.includes('+ PT')) base += 2000;
+      
+      py.amount = base;
+      await py.save();
+      paymentUpdates++;
+    }
+    console.log(`Updated ${paymentUpdates} payments.`);
 
     console.log('Done!');
   } catch (error) {
