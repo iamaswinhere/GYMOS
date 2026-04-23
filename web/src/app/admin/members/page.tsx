@@ -115,7 +115,7 @@ export default function MembersPage() {
 
   const calculateAmount = (plan: string, hasPT: boolean) => {
     let base = 0;
-    if (plan === 'Student') base = 799;
+    if (plan === 'Student') base = 1;
     else if (plan === 'Monthly GYM') base = 999;
     else if (plan === 'Quarterly') base = 2500;
     else if (plan === 'Half-Yearly') base = 5000;
@@ -526,7 +526,7 @@ export default function MembersPage() {
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Membership Plan</label>
                        <select value={formData.plan} onChange={(e) => setFormData({...formData, plan: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer">
-                          <option value="Student">Student (₹799)</option>
+                          <option value="Student">Student (₹1)</option>
                           <option value="Monthly GYM">Regular GYM (₹999)</option>
                           <option value="Quarterly">Quarterly (₹2,500)</option>
                           <option value="Half-Yearly">Half-Yearly (₹5,000)</option>

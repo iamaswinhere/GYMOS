@@ -23,8 +23,8 @@ export default function KioskPage() {
       
       const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
       
-      // Static token for physical printing
-      setToken(btoa(`gymos_static_qr_checkin_token_v1`));
+      // Dynamic secure token for QR
+      setToken(btoa(`gymos_secure_${dateString}`));
 
       // Generate the alternative 6-digit PIN code
       const encoder = new TextEncoder();
