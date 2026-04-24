@@ -18,12 +18,21 @@ export default function AdminLayout({
 
   useEffect(() => {
     const token = localStorage.getItem('gymos_admin_token');
+    const adminDataStr = localStorage.getItem('gymos_admin_data');
     const isLoggedIn = !!token;
     
-    if (!isLoggedIn && pathname !== '/admin/login') {
+    const isLoginPage = pathname === '/admin/login' || pathname === '/trainer';
+    
+    if (!isLoggedIn && !isLoginPage) {
       router.push('/admin/login');
-    } else if (isLoggedIn && pathname === '/admin/login') {
-      router.push('/admin');
+    } else if (isLoggedIn && isLoginPage) {
+      // Redirect based on role
+      const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
+      if (adminData?.role === 'trainer') {
+        router.push('/admin/members');
+      } else {
+        router.push('/admin');
+      }
     } else {
       setIsAuth(true);
     }
@@ -34,13 +43,15 @@ export default function AdminLayout({
     setIsSidebarOpen(false);
   }, [pathname]);
 
-  if (!isAuth && pathname !== '/admin/login') {
+  const isLoginPage = pathname === '/admin/login' || pathname === '/trainer';
+
+  if (!isAuth && !isLoginPage) {
     return <div className="min-h-screen bg-black" />; // Loading state
   }
 
   return (
     <DashboardProvider>
-      {pathname === '/admin/login' ? (
+      {isLoginPage ? (
         children
       ) : (
         <div className="min-h-screen bg-black flex overflow-hidden">

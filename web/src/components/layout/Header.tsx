@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 const Header = ({ onMenuClick }: HeaderProps) => {
-  const { notifications, setSearchQuery, clearNotifications, revenue, activeMembers, gymTraffic } = useDashboard();
+  const { notifications, setSearchQuery, clearNotifications, revenue, activeMembers, gymTraffic, admin } = useDashboard();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleWhatsAppSummary = () => {
@@ -80,11 +80,11 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         
         <div className="flex items-center gap-3 pl-2 md:pl-6 border-l border-white/5">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-black text-white uppercase tracking-tight">Admin</p>
-            <p className="text-[9px] text-primary font-bold tracking-widest uppercase">Lead</p>
+            <p className="text-xs font-black text-white uppercase tracking-tight">{admin?.name || 'Admin'}</p>
+            <p className={`text-[9px] font-bold tracking-widest uppercase ${admin?.role === 'trainer' ? 'text-cyan-400' : 'text-primary'}`}>{admin?.role === 'trainer' ? 'Trainer' : 'Admin'}</p>
           </div>
-          <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl md:rounded-2xl flex items-center justify-center border border-primary/20">
-            <User className="text-primary" size={20} />
+          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center border ${admin?.role === 'trainer' ? 'bg-cyan-500/10 border-cyan-500/20' : 'bg-primary/10 border-primary/20'}`}>
+            <User className={admin?.role === 'trainer' ? 'text-cyan-400' : 'text-primary'} size={20} />
           </div>
         </div>
       </div>

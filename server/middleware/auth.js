@@ -28,4 +28,11 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { auth, adminOnly };
+const adminOrTrainer = (req, res, next) => {
+  if (req.userRole !== 'admin' && req.userRole !== 'trainer') {
+    return res.status(403).json({ message: 'Access denied, admin or trainer only' });
+  }
+  next();
+};
+
+module.exports = { auth, adminOnly, adminOrTrainer };

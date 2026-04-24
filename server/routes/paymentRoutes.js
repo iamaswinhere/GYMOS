@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Payment = require('../models/Payment');
-const { auth, adminOnly } = require('../middleware/auth');
+const { auth, adminOnly, adminOrTrainer } = require('../middleware/auth');
 
-// Get all payments (Admin Only)
-router.get('/all', auth, adminOnly, async (req, res) => {
+// Get all payments (Admin or Trainer)
+router.get('/all', auth, adminOrTrainer, async (req, res) => {
   try {
     const payments = await Payment.find().populate('memberId').sort({ paymentDate: -1 });
     res.json(payments);

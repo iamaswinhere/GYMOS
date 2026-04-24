@@ -3,7 +3,7 @@ const router = express.Router();
 const Member = require('../models/Member');
 const Payment = require('../models/Payment');
 const jwt = require('jsonwebtoken');
-const { auth, adminOnly } = require('../middleware/auth');
+const { auth, adminOnly, adminOrTrainer } = require('../middleware/auth');
 
 // Login member
 router.post('/login', async (req, res) => {
@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
 });
 
 // Create a new member (Admin Only)
-router.post('/add', auth, adminOnly, async (req, res) => {
+router.post('/add', auth, adminOrTrainer, async (req, res) => {
   try {
     const { name, mobileNumber, email, dateOfBirth, membershipPlan } = req.body;
     
@@ -89,7 +89,7 @@ router.post('/add', auth, adminOnly, async (req, res) => {
 });
 
 // Get all members (Admin Only)
-router.get('/all', auth, adminOnly, async (req, res) => {
+router.get('/all', auth, adminOrTrainer, async (req, res) => {
   try {
     const members = await Member.find().sort({ joiningDate: -1 });
     res.json(members);
@@ -99,7 +99,7 @@ router.get('/all', auth, adminOnly, async (req, res) => {
 });
 
 // Bulk import members from CSV (Admin Only) — single request, single DB operation
-router.post('/bulk-import', auth, adminOnly, async (req, res) => {
+router.post('/bulk-import', auth, adminOrTrainer, async (req, res) => {
   try {
     const { members } = req.body;
     if (!Array.isArray(members) || members.length === 0) {
@@ -141,7 +141,7 @@ router.post('/bulk-import', auth, adminOnly, async (req, res) => {
 });
 
 // Update member (Admin Only)
-router.put('/update/:id', auth, adminOnly, async (req, res) => {
+router.put('/update/:id', auth, adminOrTrainer, async (req, res) => {
   try {
     const updatedMember = await Member.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updatedMember);
@@ -151,7 +151,7 @@ router.put('/update/:id', auth, adminOnly, async (req, res) => {
 });
 
 // Delete member (Admin Only)
-router.delete('/delete/:id', auth, adminOnly, async (req, res) => {
+router.delete('/delete/:id', auth, adminOrTrainer, async (req, res) => {
   try {
     await Member.findByIdAndDelete(req.params.id);
     res.json({ message: 'Member deleted successfully' });
@@ -164,7 +164,7 @@ const { jsPDF } = require("jspdf");
 const { default: autoTable } = require("jspdf-autotable");
 
 // Renew membership (Admin Only or Token Protected)
-router.post('/renew/:id', auth, async (req, res) => {
+router.post('/renew/:id', auth, adminOnly, async (req, res) => {
   try {
     const { durationMonths, amountPaid } = req.body;
     const member = await Member.findById(req.params.id);

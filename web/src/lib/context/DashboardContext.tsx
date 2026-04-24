@@ -131,11 +131,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const logout = useCallback(() => {
+    const isAdminTrainer = state.admin?.role === 'trainer';
     localStorage.removeItem('gymos_admin_token');
     localStorage.removeItem('gymos_admin_data');
     setState(prev => ({ ...prev, token: null, admin: null }));
-    router.push('/admin/login');
-  }, [router]);
+    router.push(isAdminTrainer ? '/trainer' : '/admin/login');
+  }, [router, state.admin]);
 
   const authenticatedFetch = useCallback(async (url: string, options: RequestInit = {}) => {
     const token = state.token || localStorage.getItem('gymos_admin_token');
@@ -147,9 +148,13 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const response = await fetch(url, { ...options, headers });
     
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       logout();
       throw new Error("Unauthorized");
+    }
+    
+    if (response.status === 403) {
+      throw new Error("Forbidden: insufficient permissions");
     }
     
     return response;
@@ -161,19 +166,33 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      const [membersRes, eventsRes, paymentsRes, settingsRes] = await Promise.all([
+      // Determine role from stored admin data
+      const adminDataStr = localStorage.getItem('gymos_admin_data');
+      const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
+      const userRole = adminData?.role || 'admin';
+
+      const fetchPromises: Promise<Response>[] = [
         authenticatedFetch(`${BASE_URL}/members/all`),
         authenticatedFetch(`${BASE_URL}/events/all`),
         authenticatedFetch(`${BASE_URL}/payments/all`),
-        authenticatedFetch(`${BASE_URL}/admin/settings`)
-      ]);
+      ];
 
-      const [membersData, eventsData, paymentsData, settingsData] = await Promise.all([
+      // Only fetch settings for admin role
+      if (userRole === 'admin') {
+        fetchPromises.push(authenticatedFetch(`${BASE_URL}/admin/settings`));
+      }
+
+      const responses = await Promise.all(fetchPromises);
+
+      const [membersRes, eventsRes, paymentsRes] = responses;
+      const settingsRes = userRole === 'admin' ? responses[3] : null;
+
+      const [membersData, eventsData, paymentsData] = await Promise.all([
         membersRes.ok ? membersRes.json() : [],
         eventsRes.ok ? eventsRes.json() : [],
         paymentsRes.ok ? paymentsRes.json() : [],
-        settingsRes.ok ? settingsRes.json() : null
       ]);
+      const settingsData = settingsRes && settingsRes.ok ? await settingsRes.json() : null;
 
       const members = (Array.isArray(membersData) ? membersData : []).map((m: any) => ({
         id: m._id,
@@ -368,7 +387,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         admin: data.admin 
       }));
       
-      router.push('/admin');
+      // Redirect based on role
+      if (data.admin?.role === 'trainer') {
+        router.push('/admin/members');
+      } else {
+        router.push('/admin');
+      }
     } catch (error: any) {
       throw error;
     }

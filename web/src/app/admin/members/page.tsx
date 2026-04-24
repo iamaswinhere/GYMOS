@@ -18,7 +18,7 @@ import { useDashboard, Member } from '@/lib/context/DashboardContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MembersPage() {
-  const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData, getMemberPayments } = useDashboard();
+  const { members, addMember, bulkImportMembers, updateMember, renewMember, deleteMember, isLoading, refreshData, getMemberPayments, admin } = useDashboard();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -402,6 +402,7 @@ export default function MembersPage() {
                       <td className="px-6 py-5 text-xs text-gray-500 font-bold uppercase">{new Date(member.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                       <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {admin?.role !== 'trainer' && (
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
                             disabled={!!processingRenew}
@@ -414,6 +415,7 @@ export default function MembersPage() {
                                 <RefreshCw size={18} />
                             )}
                           </button>
+                          )}
                           <button onClick={(e) => { e.stopPropagation(); handleOpenModal(member); }} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Profile">
                             <Edit2 size={18} />
                           </button>
@@ -472,6 +474,7 @@ export default function MembersPage() {
                   <p className="text-[10px] font-black text-gray-400 uppercase">{new Date(member.expiry).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {admin?.role !== 'trainer' && (
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
                     disabled={!!processingRenew}
@@ -484,6 +487,7 @@ export default function MembersPage() {
                         <RefreshCw size={18} />
                     )}
                   </button>
+                  )}
                   <button onClick={(e) => { e.stopPropagation(); handleOpenModal(member); }} className="p-3 bg-white/5 rounded-xl text-gray-400 hover:text-primary hover:bg-primary/10 transition-all border border-white/5" title="Edit">
                     <Edit2 size={18} />
                   </button>

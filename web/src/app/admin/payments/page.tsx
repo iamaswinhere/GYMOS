@@ -4,7 +4,7 @@ import { Download, Filter, IndianRupee, TrendingUp, AlertCircle } from 'lucide-r
 import { useDashboard } from '@/lib/context/DashboardContext';
 
 export default function PaymentsPage() {
-  const { members, revenue } = useDashboard();
+  const { members, revenue, admin } = useDashboard();
 
   // Calculate some sub-stats
   const totalReceived = revenue;
@@ -43,6 +43,7 @@ export default function PaymentsPage() {
         </button>
       </div>
 
+      {admin?.role !== 'trainer' && (
       <div className="grid md:grid-cols-3 gap-6">
           <div className="dashboard-card border-green-500/20 bg-green-500/5 relative overflow-hidden group">
               <div className="relative z-10">
@@ -77,6 +78,7 @@ export default function PaymentsPage() {
               <AlertCircle className="absolute -right-4 -bottom-4 w-24 h-24 text-red-500/10 rotate-12 group-hover:scale-110 transition-transform" />
           </div>
       </div>
+      )}
 
       <div className="dashboard-card !p-0">
         <div className="p-6 border-b border-white/5 flex justify-between items-center">

@@ -86,6 +86,21 @@ mongoose.connect(process.env.MONGODB_URI)
       } else {
         console.log('Admin already exists in DB:', existing.username);
       }
+
+      // Auto-seed default trainer
+      const existingTrainer = await Admin.findOne({ role: 'trainer' });
+      if (!existingTrainer) {
+        const trainer = new Admin({
+          username: 'gymos_trainer',
+          password: 'Trainer@2024!',
+          name: 'GYMOS Trainer',
+          role: 'trainer'
+        });
+        await trainer.save();
+        console.log('✅ Trainer auto-seeded: gymos_trainer / Trainer@2024!');
+      } else {
+        console.log('Trainer already exists in DB:', existingTrainer.username);
+      }
     } catch (seedErr) {
       console.error('Admin seed failed:', seedErr.message);
     }

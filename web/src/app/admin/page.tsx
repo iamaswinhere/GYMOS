@@ -56,11 +56,19 @@ const Dashboard = () => {
     searchQuery,
     searchResult,
     isLoading,
-    payments
+    payments,
+    admin
   } = useDashboard();
 
   const router = useRouter();
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('monthly');
+
+  // Redirect trainers away from dashboard
+  useEffect(() => {
+    if (admin?.role === 'trainer') {
+      router.push('/admin/members');
+    }
+  }, [admin, router]);
 
 
 
