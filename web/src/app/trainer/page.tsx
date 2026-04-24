@@ -22,7 +22,9 @@ export default function TrainerLoginPage() {
       if (adminData.role === 'trainer') {
         router.push('/admin/members');
       } else {
-        router.push('/admin');
+        // Clear admin session if trying to access trainer login
+        localStorage.removeItem('gymos_admin_token');
+        localStorage.removeItem('gymos_admin_data');
       }
     }
   }, [router]);

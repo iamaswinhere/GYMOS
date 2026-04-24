@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Dumbbell, Lock, User, ArrowRight } from 'lucide-react';
 import { useDashboard } from '@/lib/context/DashboardContext';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -10,6 +11,23 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useDashboard();
+  const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('gymos_admin_token');
+    const adminDataStr = localStorage.getItem('gymos_admin_data');
+    if (token && adminDataStr) {
+      const adminData = JSON.parse(adminDataStr);
+      if (adminData.role === 'admin') {
+        router.push('/admin');
+      } else {
+        // Clear trainer session if trying to access admin login
+        localStorage.removeItem('gymos_admin_token');
+        localStorage.removeItem('gymos_admin_data');
+      }
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

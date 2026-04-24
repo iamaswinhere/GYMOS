@@ -26,13 +26,16 @@ export default function AdminLayout({
     if (!isLoggedIn && !isLoginPage) {
       router.push('/admin/login');
     } else if (isLoggedIn && isLoginPage) {
-      // Redirect based on role
+      // Redirect based on role, but only if on the "right" login page
+      // OR if we are on the "other" login page, let the page handle session clearing
       const adminData = adminDataStr ? JSON.parse(adminDataStr) : null;
-      if (adminData?.role === 'trainer') {
+      
+      if (adminData?.role === 'trainer' && pathname === '/trainer') {
         router.push('/admin/members');
-      } else {
+      } else if (adminData?.role === 'admin' && pathname === '/admin/login') {
         router.push('/admin');
       }
+      // If roles don't match the page, we stay on the page and let the component clear the session
     } else {
       setIsAuth(true);
     }
