@@ -566,6 +566,10 @@ export default function MembersPage() {
                        </select>
                     </div>
                     <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Date of Birth</label>
+                       <input type="date" value={formData.dateOfBirth} onChange={(e) => setFormData({...formData, dateOfBirth: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" style={{ colorScheme: 'dark' }} />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Emergency Contact</label>
                        <input type="text" placeholder="+91 XXXX XXXX" value={formData.emergencyContact} onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-primary/50 outline-none transition-all placeholder:text-gray-800" />
                     </div>

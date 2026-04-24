@@ -426,7 +426,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (res.ok) {
         const savedMember = await res.json();
         if (!skipNotifications) {
-          const ownerNumber = '919567950284';
+          const ownerNumber = '918921809791';
           const waMessage = encodeURIComponent(
             `🏋️ *GYMOS New Signup Alert!*\n\n` +
             `👤 *Name:* ${savedMember.name}\n` +
