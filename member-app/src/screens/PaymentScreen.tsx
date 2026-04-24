@@ -79,7 +79,7 @@ const PaymentScreen = ({ navigation }: any) => {
           <ArrowLeft color={COLORS.white} size={22} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>SECURE CHECKOUT</Text>
-        <div style={{ width: 40 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
