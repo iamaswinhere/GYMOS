@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Search, Bell, User, MessageCircle, Menu } from 'lucide-react';
+import { Bell, User, MessageCircle, Menu } from 'lucide-react';
 import { useDashboard } from '@/lib/context/DashboardContext';
 
 interface HeaderProps {
@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 const Header = ({ onMenuClick }: HeaderProps) => {
-  const { notifications, setSearchQuery, clearNotifications, revenue, activeMembers, gymTraffic, admin } = useDashboard();
+  const { notifications, clearNotifications, revenue, activeMembers, gymTraffic, admin } = useDashboard();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const handleWhatsAppSummary = () => {
@@ -18,23 +18,13 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
   return (
     <header className="h-20 border-b border-white/5 bg-black/50 backdrop-blur-md px-4 md:px-8 flex items-center justify-between sticky top-0 z-40">
-      <div className="flex items-center gap-4 flex-1 max-w-xl">
+      <div className="flex items-center gap-4">
         <button 
           onClick={onMenuClick}
           className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
         >
           <Menu size={24} />
         </button>
-        
-        <div className="relative group flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search..." 
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#121212] border border-white/5 rounded-xl py-2.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-primary/50 transition-all font-medium placeholder:text-gray-600"
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-2 md:gap-6 ml-4">
