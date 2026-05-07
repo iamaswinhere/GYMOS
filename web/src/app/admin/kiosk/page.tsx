@@ -11,39 +11,10 @@ export default function KioskPage() {
   const [currentTime, setCurrentTime] = useState("");
   const router = useRouter();
 
-  // In a real production environment, this token would be fetched from the backend daily or hourly.
-  // For now, we will generate time-based tokens on the client.
+  // Set completely static codes for physical printing
   useEffect(() => {
-    const generateTokens = async () => {
-      // Current time
-      const now = new Date();
-      // IST Offset (UTC+5:30)
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const istDate = new Date(now.getTime() + istOffset);
-      
-      const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
-      
-      // Dynamic secure token for QR
-      setToken(btoa(`gymos_secure_${dateString}`));
-
-      // Generate the alternative 6-digit PIN code
-      const encoder = new TextEncoder();
-      const data = encoder.encode('gymos_pin_' + dateString);
-      try {
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        const shortCode = parseInt(hashHex.substring(0, 8), 16).toString().substring(0, 6).padStart(6, '0');
-        setPinCode(shortCode);
-      } catch (err) {
-        setPinCode("000000");
-      }
-    };
-
-    generateTokens();
-    const interval = setInterval(generateTokens, 60000); // Check every minute if the hour changed
-
-    return () => clearInterval(interval);
+    setToken(btoa('gymos_static_qr_checkin_token_v1'));
+    setPinCode('123456');
   }, []);
 
   useEffect(() => {
