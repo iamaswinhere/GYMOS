@@ -8,23 +8,11 @@ import { useRouter } from 'next/navigation';
 export default function KioskPage() {
   const [token, setToken] = useState("");
   const [pinCode, setPinCode] = useState("");
-  const [currentTime, setCurrentTime] = useState("");
   const router = useRouter();
-
   // Set completely static codes for physical printing
   useEffect(() => {
     setToken(btoa('gymos_static_qr_checkin_token_v1'));
-    setPinCode('123456');
-  }, []);
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    };
-    updateTime();
-    const timeInterval = setInterval(updateTime, 1000);
-    return () => clearInterval(timeInterval);
+    setPinCode('839214'); // Static random-looking code
   }, []);
 
   return (
@@ -39,10 +27,6 @@ export default function KioskPage() {
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase italic text-center mb-4">
               ELITE <span className="text-primary text-glow">CHECK-IN</span>
             </h1>
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-6 py-2 rounded-full">
-                <Clock size={16} className="text-primary" />
-                <span className="text-xl font-bold tracking-widest font-mono text-white">{currentTime || "00:00:00"}</span>
-            </div>
         </div>
 
         {/* QR Code Container */}

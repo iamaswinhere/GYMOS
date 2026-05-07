@@ -132,7 +132,7 @@ const PaymentScreen = ({ navigation }: any) => {
               {loading ? (
                 <ActivityIndicator color="#000" />
               ) : (
-                <Text style={styles.payBtnText}>PAY SECURELY WITH RAZORPAY</Text>
+                <Text style={styles.payBtnText}>PAY NOW</Text>
               )}
             </TouchableOpacity>
 
