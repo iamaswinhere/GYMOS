@@ -1,19 +1,16 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Clock, Zap } from 'lucide-react';
+import { ShieldCheck, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Hardcoded static values — never change unless intentionally updated
+const STATIC_QR_VALUE = "gymos://checkin?token=Z3ltb3Nfc3RhdGljX3FyX2NoZWNraW5fdG9rZW5fdjE=";
+const STATIC_PIN = "839214";
+
 export default function KioskPage() {
-  const [token, setToken] = useState("");
-  const [pinCode, setPinCode] = useState("");
   const router = useRouter();
-  // Set completely static codes for physical printing
-  useEffect(() => {
-    setToken(btoa('gymos_static_qr_checkin_token_v1'));
-    setPinCode('839214'); // Static random-looking code
-  }, []);
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -29,39 +26,30 @@ export default function KioskPage() {
             </h1>
         </div>
 
-        {/* QR Code Container */}
+        {/* QR Code Container — static, no animation line */}
         <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 20 }}
-            className="bg-white p-8 rounded-[40px] shadow-[0_0_50px_rgba(255,196,0,0.2)] relative group"
+            className="bg-white p-8 rounded-[40px] shadow-[0_0_50px_rgba(255,196,0,0.2)] relative"
         >
-          {/* Scanning Animation line */}
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-primary/80 shadow-[0_0_20px_rgba(255,196,0,1)] animate-[scan_2s_ease-in-out_infinite]"></div>
-
           <div className="border-[8px] border-black rounded-[24px] p-6 bg-white relative">
             <div className="absolute top-[-16px] left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full">
                 SCAN WITH GYMOS APP
             </div>
-            {token ? (
-              <QRCodeSVG 
-                value={`gymos://checkin?token=${token}`} 
-                size={280} 
-                level="H"
-                fgColor="#000000"
-                bgColor="#ffffff"
-                imageSettings={{
-                    src: "/logo.png",
-                    height: 50,
-                    width: 50,
-                    excavate: true,
-                }}
-              />
-            ) : (
-                <div className="w-[280px] h-[280px] flex items-center justify-center bg-gray-100 rounded-xl">
-                    <Zap size={32} className="text-primary animate-pulse" />
-                </div>
-            )}
+            <QRCodeSVG 
+              value={STATIC_QR_VALUE}
+              size={280} 
+              level="H"
+              fgColor="#000000"
+              bgColor="#ffffff"
+              imageSettings={{
+                  src: "/logo.png",
+                  height: 50,
+                  width: 50,
+                  excavate: true,
+              }}
+            />
           </div>
         </motion.div>
 
@@ -74,11 +62,7 @@ export default function KioskPage() {
 
             <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-2xl flex flex-col items-center mt-4 w-full">
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Alternative Check-in Code</p>
-                {pinCode ? (
-                  <p className="text-3xl md:text-5xl font-black text-white tracking-[0.5em]">{pinCode}</p>
-                ) : (
-                  <Zap size={32} className="text-primary animate-pulse" />
-                )}
+                <p className="text-3xl md:text-5xl font-black text-white tracking-[0.5em]">{STATIC_PIN}</p>
             </div>
 
             <button 
