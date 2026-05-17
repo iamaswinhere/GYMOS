@@ -5,23 +5,9 @@ const Attendance = require('../models/Attendance');
 const Member = require('../models/Member');
 const { auth } = require('../middleware/auth');
 
-const getExpectedTokens = () => {
-    // Current UTC time
-    const now = new Date();
-    // Offset for IST (UTC+5:30)
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(now.getTime() + istOffset);
-    
-    // Calculate date string using IST values
-    const dateString = `${istDate.getUTCFullYear()}-${istDate.getUTCMonth()}-${istDate.getUTCDate()}-${istDate.getUTCHours()}`;
-    const qrToken = Buffer.from(`gymos_secure_${dateString}`).toString('base64');
-    
-    // Generate a 6-digit numeric string for manual entry
-    const hash = crypto.createHash('sha256').update('gymos_pin_' + dateString).digest('hex');
-    const shortCode = parseInt(hash.substring(0, 8), 16).toString().substring(0, 6).padStart(6, '0');
-    
-    return { qrToken, shortCode };
-};
+// Static tokens — must match the Kiosk page constants exactly
+const STATIC_QR_TOKEN = 'Z3ltb3Nfc3RhdGljX3FyX2NoZWNraW5fdG9rZW5fdjE=';
+const STATIC_PIN = '839214';
 
 // Mark attendance
 router.post('/mark', auth, async (req, res) => {
@@ -33,11 +19,10 @@ router.post('/mark', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized: You can only mark attendance for yourself' });
     }
 
-    // Kiosk Security: If not an admin, a valid QR scan token OR short code is required
+    // Kiosk Security: Validate static QR token or static PIN
     if (req.userRole !== 'admin') {
-      const expected = getExpectedTokens();
-      if (token !== expected.qrToken && token !== expected.shortCode) {
-          return res.status(403).json({ message: 'Invalid or expired check-in token.' });
+      if (token !== STATIC_QR_TOKEN && token !== STATIC_PIN) {
+          return res.status(403).json({ message: 'Invalid check-in token. Please scan the official GYMOS Kiosk QR.' });
       }
     }
 
