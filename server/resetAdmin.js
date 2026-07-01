@@ -6,8 +6,8 @@ dotenv.config();
 // ========================================
 // SET YOUR NEW CREDENTIALS HERE
 // ========================================
-const NEW_USERNAME = 'gymos_admin';
-const NEW_PASSWORD = 'GymOS@2024!';
+const NEW_USERNAME = 'Aswin';
+const NEW_PASSWORD = 'Aswin@123';
 // ========================================
 
 async function resetAdmin() {

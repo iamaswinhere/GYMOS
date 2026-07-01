@@ -10,7 +10,8 @@ import {
   Calendar,
   LogOut,
   Dumbbell,
-  X
+  X,
+  CheckSquare
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,6 +36,7 @@ const Sidebar = ({ isOpen, onClose, isMobile = false }: SidebarProps) => {
   const allMenuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin', roles: ['admin'] },
     { name: 'Members', icon: Users, path: '/admin/members', roles: ['admin', 'trainer'] },
+    { name: 'Attendance', icon: CheckSquare, path: '/admin/attendance', roles: ['admin', 'trainer'] },
     { name: 'Payments', icon: CreditCard, path: '/admin/payments', roles: ['admin', 'trainer'] },
     { name: 'Events', icon: Calendar, path: '/admin/events', roles: ['admin', 'trainer'] },
     { name: 'Settings', icon: Settings, path: '/admin/settings', roles: ['admin'] },

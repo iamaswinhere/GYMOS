@@ -76,13 +76,13 @@ mongoose.connect(process.env.MONGODB_URI)
       const existing = await Admin.findOne({ role: 'admin' });
       if (!existing) {
         const admin = new Admin({
-          username: 'gymos_admin',
-          password: 'GymOS@2024!',
+          username: 'Aswin',
+          password: 'Aswin@123',
           name: 'GYMOS Admin',
           role: 'admin'
         });
         await admin.save();
-        console.log('✅ Admin auto-seeded: gymos_admin / GymOS@2024!');
+        console.log('✅ Admin auto-seeded: Aswin / Aswin@123');
       } else {
         console.log('Admin already exists in DB:', existing.username);
       }
