@@ -10,7 +10,9 @@ import {
   StatusBar,
   ActivityIndicator,
   Modal,
-  Pressable
+  Pressable,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { Dumbbell, ArrowRight, AlertCircle, X } from 'lucide-react-native';
 import { COLORS, SIZES } from '../constants/theme';
@@ -80,49 +82,56 @@ const LoginScreen = ({ navigation }: any) => {
         </Pressable>
       </Modal>
 
-      <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Dumbbell color={COLORS.primary} size={64} strokeWidth={3} />
-          <Text style={styles.logoText}>GYM<Text style={{ color: COLORS.primary }}>OS</Text></Text>
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.content}>
+            <View style={styles.logoContainer}>
+              <Dumbbell color={COLORS.primary} size={64} strokeWidth={3} />
+              <Text style={styles.logoText}>GYM<Text style={{ color: COLORS.primary }}>OS</Text></Text>
+            </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>WELCOME BACK</Text>
-          <Text style={styles.subtitle}>Enter your mobile number to access your membership</Text>
+            <View style={styles.formContainer}>
+              <Text style={styles.title}>WELCOME BACK</Text>
+              <Text style={styles.subtitle}>Enter your mobile number to access your membership</Text>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputPrefix}>+91</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Mobile Number"
-              placeholderTextColor="#666"
-              keyboardType="phone-pad"
-              value={mobileNumber}
-              onChangeText={setMobileNumber}
-              maxLength={10}
-            />
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputPrefix}>+91</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mobile Number"
+                  placeholderTextColor="#666"
+                  keyboardType="phone-pad"
+                  value={mobileNumber}
+                  onChangeText={setMobileNumber}
+                  maxLength={10}
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={styles.button}
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.black} />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>CONTINUE</Text>
+                    <ArrowRight color={COLORS.black} size={20} strokeWidth={3} />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>New to GYMOS? Visit our website to join.</Text>
+            </View>
           </View>
-
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={COLORS.black} />
-            ) : (
-              <>
-                <Text style={styles.buttonText}>CONTINUE</Text>
-                <ArrowRight color={COLORS.black} size={20} strokeWidth={3} />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>New to GYMOS? Visit our website to join.</Text>
-        </View>
-      </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </View>
   );
 };

@@ -20,11 +20,21 @@ import { io } from 'socket.io-client';
 
 const PaymentScreen = ({ navigation }: any) => {
   const { member, token, refreshMember } = useContext(AuthContext);
-  const [paymentDone, setPaymentDone] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1);
 
-  const amount = member?.membershipPlan?.price ?? 1000;
+  const getAmountForDuration = (duration: number) => {
+    if (duration === 1) return 1000;
+    if (duration === 3) return 2500;
+    if (duration === 6) return 5000;
+    if (duration === 12) return 10000;
+    return member?.membershipPlan?.price ?? 1000;
+  };
+
+  const isRegular = member?.membershipPlan?.name && 
+    !member.membershipPlan.name.includes('Student') && 
+    !member.membershipPlan.name.includes('PT');
+
+  const amount = isRegular ? getAmountForDuration(selectedDuration) : (member?.membershipPlan?.price ?? 1000);
 
   // Listen for real-time payment success via WebSockets
   useEffect(() => {
@@ -52,7 +62,7 @@ const PaymentScreen = ({ navigation }: any) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ durationMonths: 1 }),
+        body: JSON.stringify({ durationMonths: isRegular ? selectedDuration : 1 }),
       });
 
       const data = await res.json();
@@ -91,10 +101,52 @@ const PaymentScreen = ({ navigation }: any) => {
           </View>
         ) : (
           <>
+            {isRegular && (
+              <View style={styles.optionsContainer}>
+                <Text style={styles.sectionTitle}>SELECT RENEWAL TERM</Text>
+                <View style={styles.optionsGrid}>
+                  {[
+                    { label: 'Monthly', months: 1, price: 1000 },
+                    { label: 'Quarterly', months: 3, price: 2500 },
+                    { label: 'Half-Yearly', months: 6, price: 5000 },
+                    { label: 'Annually', months: 12, price: 10000 },
+                  ].map((opt) => {
+                    const isSelected = selectedDuration === opt.months;
+                    return (
+                      <TouchableOpacity
+                        key={opt.months}
+                        style={[
+                          styles.optionCard,
+                          isSelected && styles.optionCardSelected,
+                        ]}
+                        onPress={() => setSelectedDuration(opt.months)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
+                          {opt.label}
+                        </Text>
+                        <Text style={[styles.optionPrice, isSelected && styles.optionPriceSelected]}>
+                          ₹{opt.price.toLocaleString()}
+                        </Text>
+                        <Text style={[styles.optionMonths, isSelected && styles.optionMonthsSelected]}>
+                          {opt.months} {opt.months === 1 ? 'Month' : 'Months'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             <View style={styles.infoCard}>
               <View style={styles.planHeader}>
                 <Zap color={COLORS.primary} size={20} fill={COLORS.primary} />
-                <Text style={styles.planName}>{member?.membershipPlan?.name?.toUpperCase() || 'MEMBERSHIP'}</Text>
+                <Text style={styles.planName}>
+                  {isRegular 
+                    ? `${selectedDuration === 1 ? 'MONTHLY' : selectedDuration === 3 ? 'QUARTERLY' : selectedDuration === 6 ? 'HALF-YEARLY' : 'YEARLY'} GYM`
+                    : (member?.membershipPlan?.name?.toUpperCase() || 'MEMBERSHIP')
+                  }
+                </Text>
               </View>
               
               <View style={styles.priceRow}>
@@ -105,7 +157,7 @@ const PaymentScreen = ({ navigation }: any) => {
               <View style={styles.detailsList}>
                 <View style={styles.detailItem}>
                    <View style={styles.dot} />
-                   <Text style={styles.detailText}>Automated Renewal (1 Month)</Text>
+                   <Text style={styles.detailText}>Automated Renewal ({selectedDuration} Month{selectedDuration > 1 ? 's' : ''})</Text>
                 </View>
                 <View style={styles.detailItem}>
                    <View style={styles.dot} />
@@ -281,6 +333,63 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 22,
     paddingHorizontal: 20,
+  },
+  optionsContainer: {
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    color: '#888',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+  optionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  optionCard: {
+    width: '48%',
+    backgroundColor: '#0D0D0D',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  optionCardSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: 'rgba(255, 145, 0, 0.05)',
+  },
+  optionLabel: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  optionLabelSelected: {
+    color: COLORS.primary,
+  },
+  optionPrice: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  optionPriceSelected: {
+    color: '#fff',
+  },
+  optionMonths: {
+    color: '#555',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  optionMonthsSelected: {
+    color: '#888',
   },
 });
 

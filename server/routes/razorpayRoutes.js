@@ -25,7 +25,27 @@ router.post('/create-link', auth, async (req, res) => {
 
         if (!member) return res.status(404).json({ message: "Member not found" });
 
-        const amount = member.membershipPlan.price * 100; // Razorpay expects amount in paise (1 INR = 100 paise)
+        let amount = member.membershipPlan.price * 100; // Razorpay expects amount in paise (1 INR = 100 paise)
+        let planName = member.membershipPlan.name;
+
+        const isRegular = !member.membershipPlan.name.includes('Student') && !member.membershipPlan.name.includes('PT');
+        if (isRegular) {
+            if (durationMonths === 1) {
+                amount = 1000 * 100;
+                planName = "Monthly GYM";
+            } else if (durationMonths === 3) {
+                amount = 2500 * 100;
+                planName = "Quarterly";
+            } else if (durationMonths === 6) {
+                amount = 5000 * 100;
+                planName = "Half-Yearly";
+            } else if (durationMonths === 12) {
+                amount = 10000 * 100;
+                planName = "Yearly";
+            } else {
+                amount = member.membershipPlan.price * durationMonths * 100;
+            }
+        }
 
         const rzp = getRazorpayInstance();
 
@@ -33,7 +53,7 @@ router.post('/create-link', auth, async (req, res) => {
             amount: amount,
             currency: "INR",
             accept_partial: false,
-            description: `GYMOS Renewal - ${durationMonths} Month(s)`,
+            description: `GYMOS Renewal - ${planName} (${durationMonths} Month(s))`,
             customer: {
                 name: member.name,
                 contact: `+91${member.mobileNumber.replace(/\D/g, '').slice(-10)}`, // Ensure standard format
@@ -46,7 +66,7 @@ router.post('/create-link', auth, async (req, res) => {
             notes: {
                 memberId: member._id.toString(),
                 durationMonths: durationMonths.toString(),
-                planName: member.membershipPlan.name
+                planName: planName
             },
             callback_url: "https://gymos-mobile.vercel.app", // Redirect back to app after payment
             callback_method: "get"
@@ -104,6 +124,12 @@ router.post('/webhook', async (req, res) => {
                  member.expiryDate = newExpiry;
                  member.membershipStatus = 'active';
                  member.lastRenewalDate = now;
+                 
+                 if (member.membershipPlan) {
+                     member.membershipPlan.name = planName;
+                     member.membershipPlan.durationMonths = durationMonths;
+                     member.membershipPlan.price = paymentLink.amount / 100;
+                 }
                  
                  await member.save();
 
