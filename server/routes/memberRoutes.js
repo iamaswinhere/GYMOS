@@ -167,56 +167,82 @@ const { default: autoTable } = require("jspdf-autotable");
 router.post('/renew/:id', auth, adminOnly, async (req, res) => {
   try {
     const { durationMonths, amountPaid } = req.body;
+    const duration = parseInt(durationMonths) || 1;
     const member = await Member.findById(req.params.id);
     if (!member) return res.status(404).json({ message: 'Member not found' });
 
-    // Extension logic...
+    // ── Derive correct amount & plan label from duration ──────────────────────
+    const PRICES = { 1: 1000, 3: 2500, 6: 5000, 12: 10000 };
+    const LABELS = { 1: 'Monthly GYM', 3: 'Quarterly', 6: 'Half-Yearly', 12: 'Yearly' };
+
+    const isStudent = member.membershipPlan?.name?.toLowerCase().includes('student');
+    const hasPT     = member.membershipPlan?.name?.toLowerCase().includes('pt');
+
+    let derivedAmount;
+    let derivedLabel;
+
+    if (isStudent) {
+      // Student: always 1-month duration, 1 rupee
+      derivedAmount = amountPaid ?? member.membershipPlan.price ?? 1;
+      derivedLabel  = 'Student';
+    } else {
+      const basePrice  = PRICES[duration] ?? member.membershipPlan.price * duration;
+      const ptSurcharge = hasPT ? 2000 : 0;
+      derivedAmount = amountPaid ?? (basePrice + ptSurcharge);
+      derivedLabel  = (LABELS[duration] ?? `${duration}-Month`) + (hasPT ? ' + PT' : '');
+    }
+
+    // ── Extension logic: extend from current expiry or now, whichever is later ─
     const now = new Date();
     const currentExpiry = new Date(member.expiryDate);
     const startDate = currentExpiry > now ? currentExpiry : now;
-    
+
     const newExpiry = new Date(startDate);
-    newExpiry.setMonth(newExpiry.getMonth() + parseInt(durationMonths));
-    
-    member.expiryDate = newExpiry;
-    member.membershipStatus = 'active';
-    member.lastRenewalDate = now;
-    
+    newExpiry.setMonth(newExpiry.getMonth() + duration);
+
+    // ── Update Member document ─────────────────────────────────────────────────
+    member.expiryDate          = newExpiry;
+    member.membershipStatus    = 'active';
+    member.lastRenewalDate     = now;
+    member.membershipPlan.name = derivedLabel;
+    member.membershipPlan.durationMonths = duration;
+    member.membershipPlan.price = derivedAmount;
+
     await member.save();
 
-    // 0. STORE PAYMENT IN DATABASE (Instant success per plan)
+    // ── Store Payment record ───────────────────────────────────────────────────
     const newPayment = new Payment({
       memberId: member._id,
-      amount: amountPaid || member.membershipPlan.price,
+      amount: derivedAmount,
       paymentMethod: 'Offline',
-      planName: member.membershipPlan.name,
+      planName: derivedLabel,
       status: 'success'
     });
     await newPayment.save();
 
-    // 1. REAL-TIME DASHBOARD UPDATE
+    // ── Real-time dashboard update ─────────────────────────────────────────────
     if (req.io) {
       req.io.emit('paymentUpdate', {
-        memberId: member._id,
+        memberId:   member._id,
         memberName: member.name,
-        amount: amountPaid || member.membershipPlan.price,
-        date: now,
-        plan: member.membershipPlan.name,
-        type: 'renewal'
+        amount:     derivedAmount,
+        date:       now,
+        plan:       derivedLabel,
+        type:       'renewal'
       });
     }
 
-    // 2. GENERATE PDF BILL
+    // ── Generate PDF Receipt ───────────────────────────────────────────────────
     const doc = new jsPDF();
-    
+
     doc.setFillColor(0, 0, 0);
     doc.rect(0, 0, 210, 40, 'F');
-    
+
     doc.setTextColor(255, 196, 0);
     doc.setFontSize(30);
     doc.setFont("helvetica", "bold");
     doc.text("GYMOS", 15, 25);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.text("ELITE MANAGEMENT PORTAL", 15, 32);
@@ -227,13 +253,13 @@ router.post('/renew/:id', auth, adminOnly, async (req, res) => {
 
     const tableData = [
       ["Receipt No:", `REC-${Date.now().toString().slice(-6)}`],
-      ["Date:", now.toLocaleDateString()],
+      ["Date:",        now.toLocaleDateString()],
       ["Member Name:", member.name],
-      ["Mobile:", member.mobileNumber],
-      ["Plan:", member.membershipPlan.name],
-      ["Duration:", `${durationMonths} Month(s)`],
-      ["New Expiry:", newExpiry.toLocaleDateString()],
-      ["Amount Paid:", `INR ${amountPaid || member.membershipPlan.price}`]
+      ["Mobile:",      member.mobileNumber],
+      ["Plan:",        derivedLabel],
+      ["Duration:",    `${duration} Month${duration > 1 ? 's' : ''}`],
+      ["New Expiry:",  newExpiry.toLocaleDateString()],
+      ["Amount Paid:", `INR ${derivedAmount.toLocaleString()}`]
     ];
 
     autoTable(doc, {
@@ -251,15 +277,16 @@ router.post('/renew/:id', auth, adminOnly, async (req, res) => {
 
     const pdfBase64 = doc.output('datauristring');
 
-    res.json({ 
-      member, 
-      pdf: pdfBase64,
-      message: 'Renewal successful',
+    res.json({
+      member,
+      pdf:       pdfBase64,
+      message:   'Renewal successful',
       newExpiry: member.expiryDate
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
+
 
 module.exports = router;

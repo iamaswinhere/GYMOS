@@ -20,6 +20,9 @@ import { io } from 'socket.io-client';
 
 const PaymentScreen = ({ navigation }: any) => {
   const { member, token, refreshMember } = useContext(AuthContext);
+  const [paymentDone, setPaymentDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(1);
 
   const getAmountForDuration = (duration: number) => {

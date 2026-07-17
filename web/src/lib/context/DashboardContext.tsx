@@ -88,7 +88,7 @@ interface DashboardContextType extends DashboardState {
   addMember: (member: Omit<Member, 'id'>, skipNotifications?: boolean) => Promise<void>;
   bulkImportMembers: (members: Omit<Member, 'id'>[]) => Promise<{ inserted: number }>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
-  renewMember: (id: string, months: number) => Promise<void>;
+  renewMember: (id: string, months: number, amountPaid?: number) => Promise<void>;
   deleteMember: (id: string) => Promise<void>;
   addEvent: (event: Omit<GymEvent, 'id'>) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -533,16 +533,19 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [authenticatedFetch, fetchAllData]);
 
-  const renewMember = async (id: string, months: number = 1) => {
+  const renewMember = async (id: string, months: number = 1, amountPaid?: number) => {
     try {
+      const body: Record<string, any> = { durationMonths: months };
+      if (amountPaid !== undefined) body.amountPaid = amountPaid;
+
       const res = await authenticatedFetch(`${BASE_URL}/members/renew/${id}`, {
         method: 'POST',
-        body: JSON.stringify({ durationMonths: months })
+        body: JSON.stringify(body)
       });
 
       if (res.ok) {
         const data = await res.json();
-        
+
         if (data.pdf) {
             const link = document.createElement('a');
             link.href = data.pdf;

@@ -25,6 +25,8 @@ export default function MembersPage() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
   const [processingRenew, setProcessingRenew] = useState<string | null>(null);
+  const [renewModalMember, setRenewModalMember] = useState<Member | null>(null);
+  const [selectedRenewalMonths, setSelectedRenewalMonths] = useState<number>(1);
   
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [viewingPayments, setViewingPayments] = useState<any[]>([]);
@@ -76,7 +78,7 @@ export default function MembersPage() {
                     plan: values[2] || 'Monthly GYM',
                     status: (values[3]?.toLowerCase() as any) || 'active',
                     amount: parseInt(values[4]) || 1,
-                    expiry: values[5] ? new Date(values[5]).toISOString().split('T')[0] : calculateExpiry(),
+                    expiry: values[5] ? new Date(values[5]).toISOString().split('T')[0] : calculateExpiry(values[2] || 'Monthly GYM'),
                     date: new Date().toISOString().split('T')[0]
                 });
             }
@@ -216,13 +218,30 @@ export default function MembersPage() {
     }
   };
 
-  const handleRenew = async (member: Member) => {
+  // Pricing lookup for renewal durations
+  const RENEWAL_PLANS = [
+    { label: 'Monthly',     months: 1,  price: 1000,  savings: null },
+    { label: 'Quarterly',   months: 3,  price: 2500,  savings: 'Save ₹500' },
+    { label: 'Half-Yearly', months: 6,  price: 5000,  savings: 'Save ₹1,000' },
+    { label: 'Annually',    months: 12, price: 10000, savings: 'Save ₹2,000' },
+  ];
+
+  const openRenewModal = (member: Member, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRenewalMonths(1);
+    setRenewModalMember(member);
+  };
+
+  const confirmRenew = async () => {
+    if (!renewModalMember) return;
+    const plan = RENEWAL_PLANS.find(p => p.months === selectedRenewalMonths)!;
     try {
-      setProcessingRenew(member.id);
-      await renewMember(member.id, 1);
-      alert(`${member.name}'s membership extended and receipt generated!`);
+      setProcessingRenew(renewModalMember.id);
+      setRenewModalMember(null);
+      await renewMember(renewModalMember.id, selectedRenewalMonths, plan.price);
+      alert(`✅ ${renewModalMember.name}'s membership renewed for ${plan.label}! Receipt downloaded.`);
     } catch (err: any) {
-      alert(err.message || "Failed to renew member");
+      alert(err.message || 'Failed to renew member');
     } finally {
       setProcessingRenew(null);
     }
@@ -404,10 +423,10 @@ export default function MembersPage() {
                         <div className="flex items-center justify-end gap-2">
                           {admin?.role !== 'trainer' && (
                           <button 
-                            onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
+                            onClick={(e) => openRenewModal(member, e)}
                             disabled={!!processingRenew}
-                            className={`p-2.5 bg-white/5 rounded-xl text-gray-500 transition-all ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
-                            title="Extend 1 Month"
+                            className={`p-2.5 bg-white/5 rounded-xl text-gray-500 transition-all ${processingRenew === member.id ? 'opacity-50 cursor-wait' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
+                            title="Renew Membership"
                           >
                             {processingRenew === member.id ? (
                                 <RefreshCw size={18} className="animate-spin text-green-500" />
@@ -476,9 +495,9 @@ export default function MembersPage() {
                 <div className="flex items-center gap-2">
                   {admin?.role !== 'trainer' && (
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleRenew(member); }} 
+                    onClick={(e) => openRenewModal(member, e)}
                     disabled={!!processingRenew}
-                    className={`p-3 bg-white/5 rounded-xl text-gray-400 transition-all border border-white/5 ${processingRenew === member.id ? 'opacity-50' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
+                    className={`p-3 bg-white/5 rounded-xl text-gray-400 transition-all border border-white/5 ${processingRenew === member.id ? 'opacity-50 cursor-wait' : 'hover:text-green-500 hover:bg-green-500/10'}`} 
                     title="Renew"
                   >
                     {processingRenew === member.id ? (
@@ -646,6 +665,110 @@ export default function MembersPage() {
                   <button onClick={() => setMemberToDelete(null)} className="w-full bg-white/5 text-gray-500 font-black py-4 rounded-2xl hover:bg-white/10 transition-all text-sm tracking-widest uppercase">
                     Cancel
                   </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ── Renewal Modal ──────────────────────────────────────────────── */}
+        {renewModalMember && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#0D0D0D] border border-white/10 rounded-[32px] p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
+            >
+              {/* Glow */}
+              <div className="absolute -top-20 -right-20 w-48 h-48 bg-green-500/10 blur-[80px] rounded-full pointer-events-none" />
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Renewing Membership</p>
+                  <h2 className="text-2xl font-black text-white tracking-tighter uppercase">
+                    {renewModalMember.name}
+                  </h2>
+                  <p className="text-xs text-gray-600 font-bold mt-0.5 uppercase tracking-wider">{renewModalMember.plan} · {renewModalMember.number}</p>
+                </div>
+                <button
+                  onClick={() => setRenewModalMember(null)}
+                  className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all shrink-0"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Duration Cards */}
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Select Renewal Duration</p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {RENEWAL_PLANS.map((plan) => {
+                  const isSelected = selectedRenewalMonths === plan.months;
+                  return (
+                    <button
+                      key={plan.months}
+                      onClick={() => setSelectedRenewalMonths(plan.months)}
+                      className={`relative p-4 rounded-2xl border text-left transition-all ${
+                        isSelected
+                          ? 'bg-green-500/10 border-green-500/50 shadow-[0_0_20px_rgba(74,222,128,0.1)]'
+                          : 'bg-white/[0.02] border-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      {plan.savings && (
+                        <span className="absolute -top-2 right-3 text-[9px] font-black bg-green-500 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          {plan.savings}
+                        </span>
+                      )}
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${
+                        isSelected ? 'text-green-400' : 'text-gray-500'
+                      }`}>{plan.label}</p>
+                      <p className={`text-xl font-black ${
+                        isSelected ? 'text-white' : 'text-gray-300'
+                      }`}>₹{plan.price.toLocaleString()}</p>
+                      <p className={`text-[10px] font-bold mt-0.5 ${
+                        isSelected ? 'text-green-500/70' : 'text-gray-600'
+                      }`}>{plan.months} Month{plan.months > 1 ? 's' : ''}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Summary strip */}
+              <div className="bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4 flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-0.5">Total Payable</p>
+                  <p className="text-2xl font-black text-white italic">
+                    ₹{(RENEWAL_PLANS.find(p => p.months === selectedRenewalMonths)?.price ?? 1000).toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-0.5">New Expiry ~</p>
+                  <p className="text-sm font-black text-green-400">
+                    {(() => {
+                      const base = new Date(renewModalMember.expiry);
+                      const from = base > new Date() ? base : new Date();
+                      from.setMonth(from.getMonth() + selectedRenewalMonths);
+                      return from.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+                    })()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRenewModalMember(null)}
+                  className="flex-1 bg-white/5 text-gray-500 font-black py-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-all text-xs uppercase tracking-widest"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRenew}
+                  className="flex-1 bg-green-500 text-black font-black py-4 rounded-2xl hover:bg-green-400 transition-all text-xs uppercase tracking-widest shadow-[0_8px_24px_rgba(74,222,128,0.2)] flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={15} strokeWidth={3} />
+                  Confirm & Renew
+                </button>
               </div>
             </motion.div>
           </div>
