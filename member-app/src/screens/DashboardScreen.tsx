@@ -40,12 +40,21 @@ const DashboardScreen = ({ navigation }: any) => {
     // Setup Real-time connection
     const socket = io(API_URL);
 
+    if (member?._id) {
+      socket.emit('joinMember', member._id);
+    }
+
     socket.on('eventUpdate', (data: any) => {
       if (data.type === 'added') {
         setEvents(prev => [...prev, data.event].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+        Alert.alert('New Event!', `${data.event.name} has been scheduled for ${new Date(data.event.date).toLocaleDateString()}. Check it out in your upcoming events!`);
       } else if (data.type === 'deleted') {
         setEvents(prev => prev.filter(e => (e._id || e.id) !== data.id));
       }
+    });
+
+    socket.on('expiryWarning', (data: any) => {
+      Alert.alert('Membership Expiring Soon', data.message || 'Your membership expires tomorrow. Please renew soon!');
     });
 
     return () => {

@@ -119,10 +119,21 @@ app.use('/api/razorpay', require('./routes/razorpayRoutes'));
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
+  
+  // Join a specific room based on memberId for targeted notifications
+  socket.on('joinMember', (memberId) => {
+    socket.join(`member_${memberId}`);
+    console.log(`Socket ${socket.id} joined room member_${memberId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
 });
+
+// Initialize Cron Jobs
+const { initCronJobs } = require('./cronJobs');
+initCronJobs(io);
 
 app.get('/', (req, res) => {
   res.send('GYMOS API is running with WebSockets...');

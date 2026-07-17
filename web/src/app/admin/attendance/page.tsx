@@ -185,9 +185,14 @@ export default function AttendancePage() {
                       <td className="px-6 py-5 text-sm text-gray-500 font-bold">{member.number}</td>
                       <td className="px-6 py-5">
                         {isPresent ? (
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-green-500/10 text-green-500 border-green-500/20 inline-flex items-center gap-1">
-                            <Check size={10} /> Present
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-green-500/10 text-green-500 border-green-500/20 inline-flex items-center gap-1">
+                              <Check size={10} /> Present
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                                {new Date(record.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-gray-500/10 text-gray-500 border-gray-500/20 inline-flex items-center gap-1">
                             Absent

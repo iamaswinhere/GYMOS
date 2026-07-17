@@ -11,7 +11,8 @@ import {
   X,
   Search,
   Sparkles,
-  User as UserIcon
+  User as UserIcon,
+  AlertCircle
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -59,6 +60,11 @@ const Dashboard = () => {
     payments,
     admin
   } = useDashboard();
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateString = tomorrow.toISOString().split('T')[0];
+  const expiringMembers = members.filter((m: any) => m.status === 'active' && m.expiry === tomorrowDateString);
 
   const router = useRouter();
   const [viewType, setViewType] = useState<'weekly' | 'monthly'>('monthly');
@@ -324,6 +330,27 @@ const Dashboard = () => {
                 ))
               )}
             </div>
+          </div>
+          
+          <div className="dashboard-card bg-red-950/10 border-red-500/10 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xs font-black text-red-500 uppercase tracking-widest flex items-center gap-2"><AlertCircle size={14}/> Expiring Tomorrow</h3>
+            </div>
+            {expiringMembers.length === 0 ? (
+               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center py-4">No expirations tomorrow.</p>
+            ) : (
+               <div className="space-y-3">
+                 {expiringMembers.map((m: any) => (
+                    <div key={m.id} className="flex items-center justify-between bg-black/40 p-3 rounded-xl border border-red-500/10">
+                      <div>
+                        <p className="text-sm font-black text-white">{m.name}</p>
+                        <p className="text-[9px] text-gray-500 font-bold">{m.number}</p>
+                      </div>
+                      <a href={`https://wa.me/91${m.number}?text=${encodeURIComponent(`Hi ${m.name}, your GYMOS membership expires tomorrow! Please renew to continue your fitness journey.`)}`} target="_blank" rel="noreferrer" className="bg-green-500/10 text-green-500 border border-green-500/20 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-500/20 transition-all flex items-center gap-1">WA Message</a>
+                    </div>
+                 ))}
+               </div>
+            )}
           </div>
         </div>
       </div>
