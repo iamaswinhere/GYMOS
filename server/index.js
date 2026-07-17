@@ -57,7 +57,8 @@ const io = new Server(server, {
       // ALWAYS allow for testing and seamless mobile app integration
       callback(null, true);
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true
   }
 });
 
